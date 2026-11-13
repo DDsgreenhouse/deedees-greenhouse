@@ -1,0 +1,3435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Deedee's Greenhouse &amp; Hydroponics Management System</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #e3f1e8 0%, #c8e0d2 50%, #dbeadf 100%);
+      --glass-bg: rgba(255, 255, 255, 0.72);
+      --glass-card: rgba(255, 255, 255, 0.78);
+      --glass-border: rgba(255, 255, 255, 0.65);
+      --glass-shadow: 0 8px 32px rgba(19, 58, 36, 0.08);
+      --surface-alt: rgba(235, 243, 237, 0.65);
+      --text: #14241a;
+      --muted: #4a6354;
+      --line: rgba(20, 36, 26, 0.12);
+      --brand: #1b5e3a;
+      --brand-dark: #124228;
+      --brand-light: #388e5c;
+      --accent: #10b981;
+      --leaf: #2e8b57;
+      --ok-bg: rgba(220, 252, 231, 0.85);
+      --ok-fg: #14532d;
+      --warn-bg: rgba(254, 249, 195, 0.85);
+      --warn-fg: #713f12;
+      --bad-bg: rgba(254, 226, 226, 0.85);
+      --bad-fg: #7f1d1d;
+      --radius-sm: 10px;
+      --radius: 18px;
+      --radius-lg: 24px;
+      --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-gradient: linear-gradient(135deg, #0b1610 0%, #11241a 50%, #0d1c14 100%);
+        --glass-bg: rgba(20, 34, 26, 0.72);
+        --glass-card: rgba(24, 40, 31, 0.75);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        --surface-alt: rgba(30, 50, 39, 0.65);
+        --text: #e8f3ec;
+        --muted: #93b09f;
+        --line: rgba(255, 255, 255, 0.1);
+        --brand: #34d399;
+        --brand-dark: #059669;
+        --brand-light: #6ee7b7;
+        --accent: #34d399;
+        --ok-bg: rgba(20, 83, 45, 0.65);
+        --ok-fg: #86efac;
+        --warn-bg: rgba(113, 63, 18, 0.65);
+        --warn-fg: #fde047;
+        --bad-bg: rgba(127, 29, 29, 0.65);
+        --bad-fg: #fca5a5;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: var(--font);
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 85px;
+      position: relative;
+    }
+
+    /* Ambient organic background blobs for glassmorphism depth */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    body::before {
+      width: 380px; height: 380px;
+      background: rgba(52, 211, 153, 0.25);
+      top: -80px; left: -80px;
+    }
+    body::after {
+      width: 420px; height: 420px;
+      background: rgba(27, 94, 58, 0.2);
+      bottom: 40px; right: -100px;
+    }
+
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+
+    /* Compact Glass Header */
+    header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 0.45rem 1.25rem;
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: var(--glass-shadow);
+      z-index: 100;
+    }
+
+    .header-brand { display: flex; align-items: center; gap: 0.6rem; }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      flex: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 3px 8px rgba(27, 94, 58, 0.25);
+    }
+
+    header h1 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--text); }
+    header .tagline { font-size: 0.72rem; color: var(--muted); font-weight: 500; margin-left: auto; background: var(--surface-alt); padding: 0.18rem 0.6rem; border-radius: 999px; border: 1px solid var(--glass-border); }
+
+    .menu-toggle {
+      display: none;
+      background: var(--surface-alt);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-sm);
+    }
+
+    nav {
+      display: flex;
+      width: 100%;
+      background: var(--surface-alt);
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 3px;
+      margin-top: 0.15rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+    nav::-webkit-scrollbar { display: none; }
+
+    nav button {
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.32rem 0.75rem;
+      flex: 0 0 auto;
+      text-align: center;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.78rem;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+    nav button:hover { color: var(--text); background: rgba(255, 255, 255, 0.4); }
+    nav button[aria-current="page"] {
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(27, 94, 58, 0.25);
+    }
+    @media (prefers-color-scheme: dark) {
+      nav button[aria-current="page"] { color: #0b1610; }
+    }
+
+    /* Floating Glass Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(94%, 540px);
+      background: var(--glass-bg);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      padding: 0.4rem 0.6rem;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .bottom-nav button {
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      gap: 2px;
+      cursor: pointer;
+      padding: 6px 14px;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+    }
+    .bottom-nav button .b-ico { font-size: 1.15rem; line-height: 1; }
+    .bottom-nav button[aria-current="page"] {
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(27, 94, 58, 0.25);
+    }
+    @media (prefers-color-scheme: dark) {
+      .bottom-nav button[aria-current="page"] { color: #0b1610; }
+    }
+
+    /* Layout */
+    main { padding: 0.75rem 1rem; max-width: 1280px; margin: 0 auto; width: 100%; flex: 1; }
+    h2 { color: var(--text); font-size: 1.15rem; font-weight: 800; margin-bottom: 0.3rem; letter-spacing: -0.02em; }
+    h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text); display: flex; align-items: center; gap: 0.35rem; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 0.75rem; }
+
+    /* Glass Panel */
+    .panel {
+      background: var(--glass-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.75rem;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .toolbar { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+
+    /* Top 3-Column Hero Row (Greeting, Weather, Active Batches) */
+    .top-tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      margin-bottom: 0.75rem;
+    }
+    @media (max-width: 768px) {
+      .top-tiles-grid { grid-template-columns: 1fr; }
+    }
+
+    .greeting-tile {
+      padding: 0.7rem 0.9rem;
+      background: linear-gradient(135deg, rgba(27, 94, 58, 0.92) 0%, rgba(18, 66, 40, 0.95) 100%);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(18, 66, 40, 0.14);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.45rem;
+    }
+    .greeting-tile h2 { color: #fff; margin-bottom: 0.1rem; font-size: 1rem; font-weight: 800; line-height: 1.2; }
+    .greeting-tile p { color: rgba(255, 255, 255, 0.85); font-size: 0.72rem; line-height: 1.25; }
+    .greeting-tile select {
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #fff;
+      border-radius: 999px;
+      padding: 0.22rem 0.6rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .greeting-tile select option { color: #14241a; background: #fff; }
+
+    .weather-tile {
+      background: var(--glass-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 0.7rem 0.9rem;
+      box-shadow: var(--glass-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.3rem;
+    }
+    .weather-tile-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    .weather-tile-body {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .weather-temp { font-weight: 800; font-size: 0.92rem; color: var(--text); line-height: 1.2; }
+    .weather-meta { color: var(--muted); font-size: 0.7rem; line-height: 1.25; }
+
+    .bento-card {
+      background: var(--glass-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 0.7rem 0.9rem;
+      box-shadow: var(--glass-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .bento-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+    .bento-val { font-size: 1.45rem; font-weight: 800; color: var(--brand); margin: 0.15rem 0; line-height: 1.1; }
+    .bento-sub { font-size: 0.7rem; color: var(--muted); }
+
+    /* Centered Interactive 7-Day Task Strip */
+    .date-strip-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .date-strip {
+      display: flex;
+      justify-content: center;
+      flex-wrap: nowrap;
+      gap: 0.4rem;
+      width: 100%;
+      overflow-x: auto;
+      padding: 0.15rem 0 0.3rem;
+      scrollbar-width: none;
+    }
+    .date-strip::-webkit-scrollbar { display: none; }
+    .date {
+      text-align: center;
+      padding: 0.45rem 0.4rem;
+      min-width: 70px;
+      max-width: 90px;
+      flex: 1 0 75px;
+      background: var(--glass-card);
+      backdrop-filter: blur(12px);
+      color: var(--text);
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.1rem;
+      transition: all 0.2s ease;
+      box-shadow: var(--glass-shadow);
+    }
+    .date:hover { transform: translateY(-2px); border-color: var(--brand); }
+    .date.today { border: 2px solid var(--brand); }
+    .date.selected {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+      box-shadow: 0 6px 16px rgba(27, 94, 58, 0.3);
+    }
+    @media (prefers-color-scheme: dark) {
+      .date.selected { color: #0b1610; }
+    }
+    .date .day-name { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.85; }
+    .date .day-number { font-size: 1.25rem; font-weight: 800; line-height: 1.1; }
+    .date .day-dots { display: flex; gap: 3px; justify-content: center; min-height: 7px; align-items: center; margin-top: 2px; }
+    .date .day-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); }
+    .date.selected .day-dot { background: #fff; }
+    @media (prefers-color-scheme: dark) { .date.selected .day-dot { background: #0b1610; } }
+    .date .day-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--surface-alt);
+      color: var(--brand);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .date.selected .day-tag {
+      background: rgba(255, 255, 255, 0.22);
+      color: inherit;
+    }
+
+    /* Pill Task Cards */
+    .task-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
+    .task-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      padding: 0.55rem 0.85rem;
+      background: var(--surface-alt);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      font-size: 0.82rem;
+      transition: transform 0.15s ease;
+    }
+    .task-list li:hover { transform: translateX(2px); }
+    .task-list .grow { flex: 1 1 200px; }
+
+    .swatch {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+      vertical-align: middle;
+      flex: none;
+    }
+
+    .attention { border-left: 4px solid #f59e0b; }
+
+    /* Quick Action Tiles */
+    .tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 0.55rem; }
+    .task-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      padding: 0.7rem 0.55rem;
+      background: var(--glass-card);
+      backdrop-filter: blur(14px);
+      color: var(--text);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: var(--glass-shadow);
+      transition: all 0.2s ease;
+      font-weight: 700;
+      font-size: 0.76rem;
+      text-align: center;
+      position: relative;
+    }
+    .task-btn .ico { font-size: 1.45rem; line-height: 1.1; }
+    .task-btn .tile-badge {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 999px;
+      line-height: 1.3;
+    }
+    @media (prefers-color-scheme: dark) {
+      .task-btn .tile-badge { color: #0b1610; }
+    }
+    .task-btn .tile-sub {
+      font-size: 0.66rem;
+      font-weight: 500;
+      color: var(--muted);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .task-btn:hover .tile-sub { color: inherit; opacity: 0.9; }
+    .task-btn:hover {
+      transform: translateY(-3px);
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      .task-btn:hover { color: #0b1610; }
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.55rem 1.15rem;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.18s ease;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-blue { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+    .btn-green { background: linear-gradient(135deg, var(--brand), var(--brand-dark)); }
+    @media (prefers-color-scheme: dark) { .btn-green { color: #0b1610; } }
+    .btn-red { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+    .btn-yellow { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1e1e1e; }
+    .btn-plain { background: var(--surface-alt); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none; }
+    .btn-plain:hover { background: rgba(255,255,255,0.5); }
+    .btn-sm { padding: 0.32rem 0.75rem; font-size: 0.78rem; }
+
+    /* Glass Tables & Cards */
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--glass-border);
+      background: var(--glass-card);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--glass-shadow);
+      margin-bottom: 1rem;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.45rem 0.65rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 0.78rem; }
+    th { background: var(--surface-alt); font-weight: 700; color: var(--muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em; white-space: nowrap; }
+    tbody tr:hover { background: var(--surface-alt); }
+    td.actions { white-space: nowrap; display: flex; gap: 0.35rem; }
+
+    .mobile-cards { display: none; }
+    .card {
+      background: var(--glass-card);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius);
+      padding: 1.15rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--glass-shadow);
+      border: 1px solid var(--glass-border);
+      border-left: 5px solid var(--brand);
+    }
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.45rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px dashed var(--line);
+      font-size: 0.85rem;
+    }
+    .card-actions { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .empty-note { text-align: center; padding: 2rem 1rem; color: var(--muted); }
+
+    @keyframes flash { from { background-color: rgba(52, 211, 153, 0.35); } to { background-color: transparent; } }
+    .flash, .flash td { animation: flash 2.5s ease; }
+
+    /* Growth Tab */
+    .growth-head { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; align-items: center; justify-content: space-between; }
+    .growth-head h3 { margin: 0; }
+    .stage-line { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; margin-top: 0.4rem; font-size: 0.85rem; }
+    .stage-line strong { color: var(--brand); }
+    .picker { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .picker select { width: auto; min-width: 220px; border-radius: 999px; }
+
+    .readings { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 0.85rem; }
+    .reading {
+      background: var(--glass-card);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 0.95rem 1.1rem;
+      box-shadow: var(--glass-shadow);
+    }
+    .reading-label { font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .reading-value { font-size: 1.65rem; font-weight: 800; line-height: 1.2; margin: 0.25rem 0; color: var(--text); }
+    .reading-value span { font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-left: 0.2rem; }
+    .reading-foot { font-size: 0.75rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; align-items: center; margin-top: 0.3rem; }
+    .reading.empty .reading-value { color: var(--muted); }
+
+    .badge {
+      display: inline-block;
+      padding: 0.18rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .badge.ok { background: var(--ok-bg); color: var(--ok-fg); }
+    .badge.warn { background: var(--warn-bg); color: var(--warn-fg); }
+    .badge.bad { background: var(--bad-bg); color: var(--bad-fg); }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.5rem 0 0.85rem; }
+    .chip {
+      border: 1px solid var(--glass-border);
+      background: var(--surface-alt);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.3rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+    .chip:hover { border-color: var(--brand); }
+    .chip[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
+    @media (prefers-color-scheme: dark) { .chip[aria-pressed="true"] { color: #0b1610; } }
+
+    /* SVG Chart */
+    .chart { width: 100%; height: auto; display: block; overflow: visible; }
+    .chart .axis { stroke: var(--line); stroke-width: 1.5; }
+    .chart .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.7; }
+    .chart text { fill: var(--muted); font-size: 11px; font-family: var(--font); }
+    .chart .val { fill: var(--text); font-weight: 700; font-size: 10px; }
+    .chart .band { fill: var(--leaf); opacity: 0.14; }
+    .chart .line { fill: none; stroke: var(--brand); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+    .chart .dot { fill: var(--glass-card); stroke: var(--brand); stroke-width: 3; cursor: pointer; }
+
+    .log {
+      border: 1px solid var(--glass-border);
+      border-left: 4px solid var(--brand);
+      border-radius: var(--radius);
+      background: var(--glass-card);
+      backdrop-filter: blur(12px);
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.85rem;
+      box-shadow: var(--glass-shadow);
+    }
+    .log-head { display: flex; flex-wrap: wrap; gap: 0.3rem 0.85rem; align-items: center; margin-bottom: 0.5rem; }
+    .log-values { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.4rem 1rem; margin: 0.5rem 0; background: var(--surface-alt); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); }
+    .log-values dt { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .log-values dd { font-weight: 700; font-size: 0.9rem; }
+    .log-notes { font-size: 0.85rem; margin-bottom: 0.5rem; white-space: pre-wrap; font-style: italic; color: var(--muted); }
+
+    /* Forms and Glass Dialogs */
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.85rem; color: var(--text); }
+    .form-group .hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      color: var(--text);
+      background: var(--surface-alt);
+      transition: all 0.15s ease;
+    }
+    input[type="checkbox"] { width: auto; margin-right: 0.5rem; accent-color: var(--brand); }
+    input:focus, select:focus, textarea:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25); }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 1rem; }
+    .form-error { background: var(--bad-bg); color: var(--bad-fg); padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem; }
+    .range-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .readonly-value { padding: 0.5rem 0; font-weight: 800; font-size: 1.05rem; color: var(--brand); }
+
+    dialog {
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 1.65rem;
+      max-width: 520px;
+      width: 92%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      color: var(--text);
+      margin: auto;
+    }
+    dialog::backdrop { background: rgba(10, 20, 14, 0.55); backdrop-filter: blur(5px); }
+    .modal-buttons { display: flex; justify-content: flex-end; margin-top: 1.25rem; gap: 0.5rem; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 5.2rem;
+      transform: translateX(-50%);
+      background: rgba(18, 42, 28, 0.92);
+      backdrop-filter: blur(12px);
+      color: #fff;
+      padding: 0.7rem 1.4rem;
+      border-radius: 999px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      z-index: 2000;
+      max-width: 90%;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.25rem;
+      margin-top: auto;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 768px) {
+      header { padding: 0.45rem 0.9rem; }
+      header h1 { font-size: 0.98rem; }
+      header .tagline { display: none; }
+      .menu-toggle { display: block; position: absolute; top: 0.45rem; right: 0.9rem; }
+      nav { display: none; border-radius: var(--radius); flex-direction: column; margin-top: 0.45rem; }
+      nav.show { display: flex; }
+      nav button { justify-content: flex-start; border-radius: var(--radius-sm); }
+      .table-container { display: none; }
+      .mobile-cards { display: block; }
+      main { padding: 0.9rem 0.85rem 5.5rem 0.85rem; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21v-8"/>
+          <path d="M12 13c0-4 2.5-7 7-7 0 4.5-3 7-7 7z"/>
+          <path d="M12 16c0-3-2-5-6-5 0 3.5 2.5 5 6 5z"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Deedee's Greenhouse</h1>
+      </div>
+    </div>
+    <p class="tagline">&#127793; Hydroponics &amp; Smart Farm System</p>
+
+    <button class="menu-toggle" id="menuBtn" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="mainNav">&#9776;</button>
+    <nav id="mainNav" aria-label="Main">
+      <button type="button" data-tab="home" aria-current="page">&#127968; Home</button>
+      <button type="button" data-tab="monitoring">&#127899;&#65039; Batches</button>
+      <button type="button" data-tab="growth">&#129388; Growth</button>
+      <button type="button" data-tab="calculator">&#129514; Nutrient Calc</button>
+      <button type="button" data-tab="diagnostics">&#129658; Health Check</button>
+      <button type="button" data-tab="supplies">&#128230; Supplies</button>
+      <button type="button" data-tab="prodreport">&#128221; Prod. Report</button>
+      <button type="button" data-tab="ghmonitoring">&#127777;&#65039; GH Checklists</button>
+      <button type="button" data-tab="prodinv">&#128202; Facility</button>
+      <button type="button" data-tab="harvestinv">&#127813; Harvest</button>
+      <button type="button" data-tab="costing">&#128184; Costing</button>
+      <button type="button" data-tab="parameters">&#9881;&#65039; Parameters</button>
+      <button type="button" data-tab="accounts">&#128100; Account</button>
+    </nav>
+  </header>
+
+  <!-- Floating Glass Bottom Navigation -->
+  <div class="bottom-nav" aria-label="Quick Bottom Navigation">
+    <button type="button" data-tab="home" aria-current="page"><span class="b-ico">&#127968;</span><span>Home</span></button>
+    <button type="button" data-tab="monitoring"><span class="b-ico">&#127899;&#65039;</span><span>Batches</span></button>
+    <button type="button" data-tab="growth"><span class="b-ico">&#129388;</span><span>Growth</span></button>
+    <button type="button" data-tab="calculator"><span class="b-ico">&#129514;</span><span>Calc</span></button>
+    <button type="button" data-tab="accounts"><span class="b-ico">&#128100;</span><span>Account</span></button>
+  </div>
+
+  <main>
+    <!-- Home -->
+    <section id="home" class="tab-content active">
+      <!-- Top 3-Column Row: Greeting Tile, Weather Tile, Active Batches Tile -->
+      <div class="top-tiles-grid">
+        <!-- Tile 1: Greeting -->
+        <div class="greeting-tile">
+          <div>
+            <h2 id="greetingText">Good morning</h2>
+            <p id="greetingSub">Take care of your hydroponics farm today</p>
+          </div>
+          <select id="locationFilter" aria-label="Location Filter">
+            <option value="ALL">&#127757; All Locations</option>
+            <option value="GH-1">&#127969; Greenhouse 1</option>
+            <option value="GH-2">&#127969; Greenhouse 2</option>
+            <option value="Backyard">&#127793; Backyard Kratky</option>
+          </select>
+        </div>
+
+        <!-- Tile 2: Weather Details -->
+        <div class="weather-tile" id="weatherWidget" title="Live weather in Tandang Sora, Quezon City">
+          <div class="weather-tile-head">
+            <span>Local Weather</span>
+            <span>&#128205; QC</span>
+          </div>
+          <div class="weather-tile-body">
+            <span id="weatherIcon" style="font-size:1.55rem; line-height:1;">&#9925;</span>
+            <div>
+              <div class="weather-temp" id="weatherTemp">--&deg;C &bull; Tandang Sora, QC</div>
+              <div class="weather-meta" id="weatherMeta">Loading local weather...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tile 3: Active Batches -->
+        <div class="bento-card">
+          <div class="bento-label"><span>Active Batches</span><span>&#127793;</span></div>
+          <div class="bento-val" id="bentoActiveBatches">0</div>
+          <div class="bento-sub">Currently growing in system</div>
+        </div>
+      </div>
+
+      <div class="date-strip-wrap">
+        <div class="date-strip" id="dateStrip" role="group" aria-label="Pick a day"></div>
+      </div>
+
+      <!-- Active Batch Growth Progress & Vitals Snapshot -->
+      <div class="panel" style="border-left: 5px solid var(--brand);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+          <h3 style="margin:0;">&#127793; Active Batch Growth Progress</h3>
+          <button type="button" class="btn btn-green btn-sm" data-tab="growth">Open Full Growth Log &rarr;</button>
+        </div>
+        <div id="homeGrowthSnapshot" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:0.85rem;"></div>
+      </div>
+
+      <div class="panel attention" id="attentionPanel" hidden>
+        <h3>&#9888;&#65039; Needs Attention</h3>
+        <ul class="task-list" id="attentionList"></ul>
+      </div>
+
+      <!-- Action Tiles Grid (Smart Reminders + Today's Schedule + Modules) -->
+      <div class="tasks">
+        <button type="button" class="task-btn" id="openRemindersTileBtn">
+          <span class="tile-badge" id="reminderBadgeCount">0</span>
+          <span class="ico">&#128276;</span>
+          <span>Smart Reminders</span>
+          <span class="tile-sub" id="reminderTileSub">Daily alerts</span>
+        </button>
+        <button type="button" class="task-btn" id="openScheduleTileBtn">
+          <span class="tile-badge" id="scheduleBadgeCount">0</span>
+          <span class="ico">&#128197;</span>
+          <span id="scheduleTileTitle">Today's Schedule</span>
+          <span class="tile-sub" id="scheduleTileSub">View tasks</span>
+        </button>
+        <button type="button" class="task-btn" data-tab="calculator"><span class="ico">&#129514;</span><span>Nutrient Calc</span></button>
+        <button type="button" class="task-btn" data-tab="diagnostics"><span class="ico">&#129658;</span><span>Health Diagnostic</span></button>
+        <button type="button" class="task-btn" data-tab="monitoring"><span class="ico">&#127899;&#65039;</span><span>Batch Schedules</span></button>
+        <button type="button" class="task-btn" data-tab="growth"><span class="ico">&#129388;</span><span>Lettuce Growth</span></button>
+        <button type="button" class="task-btn" data-tab="supplies"><span class="ico">&#128230;</span><span>Supplies Inv</span></button>
+        <button type="button" class="task-btn" data-tab="prodreport"><span class="ico">&#128221;</span><span>Production Log</span></button>
+        <button type="button" class="task-btn" data-tab="ghmonitoring"><span class="ico">&#127777;&#65039;</span><span>GH Checklists</span></button>
+        <button type="button" class="task-btn" data-tab="costing"><span class="ico">&#128184;</span><span>Costing &amp; Profit</span></button>
+      </div>
+    </section>
+
+    <!-- Water & Nutrient Recipe Calculator -->
+    <section id="calculator" class="tab-content">
+      <h2>&#129514; Water &amp; Hydroponic Nutrient Calculator</h2>
+      <p class="muted">Kalkulahin ang eksaktong timpla ng MasterBlend (4-18-38), Calcium Nitrate, at Epsom Salt base sa laki ng iyong reservoir tank.</p>
+      
+      <div class="panel" style="margin-top:1rem">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="calcVolume">Reservoir Volume (Liters)</label>
+            <input type="number" id="calcVolume" value="100" min="1" step="any" inputmode="decimal">
+          </div>
+          <div class="form-group">
+            <label for="calcPreset">Crop Growth Stage / Strength</label>
+            <select id="calcPreset">
+              <option value="full">Full Strength (EC 1.2 - 1.5) - Seedlings/Mature Lettuce</option>
+              <option value="half">Half Strength (EC 0.6 - 0.8) - Nursery/Early Stage</option>
+              <option value="heavy">Heavy Strength (EC 1.8 - 2.2) - Fruiting Crops</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background:var(--surface-alt); padding:1.15rem; border-radius:var(--radius); margin-top:1rem; border:1px solid var(--glass-border)">
+          <h3 style="color:var(--brand); margin-bottom:0.85rem">&#128266; Recipe Mix Output (Kailangan mong ihalo):</h3>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; text-align:center">
+            <div style="background:var(--glass-card); padding:1rem; border-radius:var(--radius-sm); border:1px solid var(--glass-border)">
+              <div class="muted small">Part 1: MasterBlend 4-18-38</div>
+              <div id="resMasterblend" style="font-size:1.6rem; font-weight:800; color:var(--brand)">0.0 g</div>
+            </div>
+            <div style="background:var(--glass-card); padding:1rem; border-radius:var(--radius-sm); border:1px solid var(--glass-border)">
+              <div class="muted small">Part 2: Epsom Salt (MgSO4)</div>
+              <div id="resEpsom" style="font-size:1.6rem; font-weight:800; color:var(--brand)">0.0 g</div>
+            </div>
+            <div style="background:var(--glass-card); padding:1rem; border-radius:var(--radius-sm); border:1px solid var(--glass-border)">
+              <div class="muted small">Part 3: Calcium Nitrate (15.5-0-0)</div>
+              <div id="resCalNit" style="font-size:1.6rem; font-weight:800; color:var(--brand)">0.0 g</div>
+            </div>
+          </div>
+          <p class="hint small muted" style="margin-top:0.9rem">&#128161; <strong>Paraan ng pagtitimpla:</strong> Tunawin muna ang MasterBlend at Epsom Salt sa tubig, haluin nang maigi, at huling ihalo ang Calcium Nitrate para hindi magkaroon ng precipitation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Automated Pest & Disease Identifier -->
+    <section id="diagnostics" class="tab-content">
+      <h2>&#129658; Plant Health &amp; Disease Identifier</h2>
+      <p class="muted">Pumili ng mga nakikitang sintomas sa iyong gulay para makita ang sanhi at agarang lunas.</p>
+
+      <div class="panel" style="margin-top:1rem">
+        <div class="form-group">
+          <label for="diagSymptom">Anong problema ang nakikita sa halaman?</label>
+          <select id="diagSymptom">
+            <option value="">-- Pumili ng Sintomas --</option>
+            <option value="tipburn">Maitim o tuyo ang gilid/dulo ng mga dahon (Tip Burn)</option>
+            <option value="yellowing">Lumalagaw o namumutla ang mga dahon (Yellowing / Chlorosis)</option>
+            <option value="rootrot">Maitim, mabaho, o may slime ang ugat (Root Rot / Slime)</option>
+            <option value="algae">May kulay berde na lumot sa loob ng reservoir / net pot (Algae Growth)</option>
+            <option value="aphids">May maliliit na kulay berde/puti na insekto sa ilalim ng dahon (Aphids / Pests)</option>
+            <option value="stunted">Mabagal lumaki at maliit ang dahon (Stunted Growth)</option>
+          </select>
+        </div>
+
+        <div id="diagResult" hidden style="background:var(--surface-alt); padding:1.15rem; border-radius:var(--radius); border-left:5px solid var(--brand); margin-top:1rem">
+          <h3 id="diagTitle" style="color:var(--brand); margin-bottom:0.5rem"></h3>
+          <p><strong>Sanhi / Cause:</strong> <span id="diagCause"></span></p>
+          <p style="margin-top:0.5rem"><strong>Iminumungkahi na Lunas (Treatment Guide):</strong></p>
+          <ul id="diagRemedy" style="margin-left:1.25rem; margin-top:0.35rem"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Batch Monitoring -->
+    <section id="monitoring" class="tab-content">
+      <h2>&#127899;&#65039; Crop Batch Schedules</h2>
+      <div class="toolbar">
+        <button type="button" id="addRowBtn" class="btn btn-blue">+ Add new batch</button>
+        <button type="button" id="exportBtn" class="btn btn-green">Export CSV</button>
+        <button type="button" id="clearDataBtn" class="btn btn-red">Clear all data</button>
+      </div>
+
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Batch ID</th>
+              <th>Color</th>
+              <th>Crop</th>
+              <th>Variety</th>
+              <th>DAS (sown)</th>
+              <th>DAT (transplant)</th>
+              <th>Week 1</th>
+              <th>Week 2</th>
+              <th>Week 3</th>
+              <th>Week 4</th>
+              <th>Harvest</th>
+              <th>Remarks</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div id="cardContainer" class="mobile-cards"></div>
+    </section>
+
+    <!-- Lettuce Growth -->
+    <section id="growth" class="tab-content">
+      <h2>&#129388; Lettuce Growth (Kratky / NFT)</h2>
+      <div class="toolbar">
+        <div class="picker">
+          <label for="growthBatch">Batch</label>
+          <select id="growthBatch"></select>
+        </div>
+        <button type="button" id="logBtn" class="btn btn-blue">+ Log a reading</button>
+        <button type="button" id="growthCsvBtn" class="btn btn-green">Export CSV</button>
+      </div>
+      <div id="growthContent"></div>
+    </section>
+
+    <!-- Supplies Inventory -->
+    <section id="supplies" class="tab-content">
+      <h2>&#128230; Supplies Inventory</h2>
+      <p class="muted">Track all your supplies, nutrients, seeds, and materials.</p>
+      <div class="toolbar">
+        <button type="button" id="addSupplyBtn" class="btn btn-blue">+ Add Supply Item</button>
+        <button type="button" id="exportSuppliesCsv" class="btn btn-green">Export CSV</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+              <th>Est. Cost (&#8369;)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="suppliesTableBody"></tbody>
+        </table>
+      </div>
+      <div id="suppliesCards" class="mobile-cards"></div>
+    </section>
+
+    <!-- Production Report -->
+    <section id="prodreport" class="tab-content">
+      <h2>&#128221; Production Report</h2>
+      <p class="muted">Record daily activities, crops, and expected harvest dates.</p>
+      <div class="toolbar">
+        <button type="button" id="addProdReportBtn" class="btn btn-blue">+ Add Production Activity</button>
+        <button type="button" id="exportProdReportCsv" class="btn btn-green">Export CSV</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Crop</th>
+              <th>Nature of Work</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+              <th>Exp. Harvest Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="prodReportTableBody"></tbody>
+        </table>
+      </div>
+      <div id="prodReportCards" class="mobile-cards"></div>
+    </section>
+
+    <!-- Greenhouse Monitoring Checklist -->
+    <section id="ghmonitoring" class="tab-content">
+      <h2>&#127777;&#65039; Greenhouse Monitoring Checklist</h2>
+      <p class="muted">Log temperature, humidity, pH, and TDS (9:00 AM &amp; 2:00 PM).</p>
+      <div class="toolbar">
+        <button type="button" id="addGhLogBtn" class="btn btn-blue">+ Add Environmental Log</button>
+        <button type="button" id="exportGhLogCsv" class="btn btn-green">Export CSV</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Air / Water Temp</th>
+              <th>Humidity</th>
+              <th>pH / TDS</th>
+              <th>Shade Net</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ghLogTableBody"></tbody>
+        </table>
+      </div>
+      <div id="ghLogCards" class="mobile-cards"></div>
+    </section>
+
+    <!-- Production Inventory & Plant Health -->
+    <section id="prodinv" class="tab-content">
+      <h2>&#128202; Facility Inventory &amp; Plant Health</h2>
+      <p class="muted">Monitor each greenhouse, plant count, and health. Healthy plants are computed automatically.</p>
+      <div class="toolbar">
+        <button type="button" id="addProdInvBtn" class="btn btn-blue">+ Add Greenhouse Record</button>
+        <button type="button" id="exportProdInvCsv" class="btn btn-green">Export CSV</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Greenhouse # / Batch</th>
+              <th>Total Holes</th>
+              <th>Sick Plants</th>
+              <th>Cause of Sickness</th>
+              <th>Healthy Plants</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="prodInvTableBody"></tbody>
+        </table>
+      </div>
+      <div id="prodInvCards" class="mobile-cards"></div>
+    </section>
+
+    <!-- Harvest Inventory -->
+    <section id="harvestinv" class="tab-content">
+      <h2>&#127813; Harvest Inventory</h2>
+      <p class="muted">Track harvested crops, quantities, and compute average weight per plant.</p>
+      <div class="toolbar">
+        <button type="button" id="addHarvestBtn" class="btn btn-blue">+ Add Harvest Record</button>
+        <button type="button" id="exportHarvestCsv" class="btn btn-green">Export CSV</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Crop</th>
+              <th>Greenhouse #</th>
+              <th># of Plants</th>
+              <th>Weight (kg)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="harvestTableBody"></tbody>
+        </table>
+      </div>
+      <div id="harvestCards" class="mobile-cards"></div>
+    </section>
+
+    <!-- Costing & Profit Analysis -->
+    <section id="costing" class="tab-content">
+      <h2>&#128184; Costing &amp; Profit Analysis</h2>
+      <p class="muted">Compute your production cost, sales, and profit. Net profit and profit % are calculated automatically.</p>
+      <div class="toolbar">
+        <button type="button" id="addCostingBtn" class="btn btn-blue">+ Add Costing Analysis</button>
+        <button type="button" id="exportCostingCsv" class="btn btn-green">Export CSV</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Crop / Item</th>
+              <th>Total Cost (&#8369;)</th>
+              <th>Total Sales (&#8369;)</th>
+              <th>Profit (&#8369;)</th>
+              <th>Profit %</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="costingTableBody"></tbody>
+        </table>
+      </div>
+      <div id="costingCards" class="mobile-cards"></div>
+    </section>
+
+    <!-- Parameters -->
+    <section id="parameters" class="tab-content">
+      <h2>&#9881;&#65039; Target Parameters</h2>
+      <p class="muted">Target ranges for your lettuce reservoirs. Readings outside a range are flagged on the Lettuce Growth and Home tabs.</p>
+      <form id="paramsForm" class="panel" style="margin-top:1rem" novalidate>
+        <div class="form-group">
+          <label for="pUnit">Nutrient meter reads in</label>
+          <select id="pUnit">
+            <option value="ec">EC (mS/cm)</option>
+            <option value="ppm">TDS (ppm, 500 scale)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Solution pH</label>
+          <div class="range-row">
+            <input type="number" id="pPhMin" step="0.1" inputmode="decimal" aria-label="pH minimum">
+            <input type="number" id="pPhMax" step="0.1" inputmode="decimal" aria-label="pH maximum">
+          </div>
+        </div>
+        <div class="form-group">
+          <label id="pEcLabel">EC (mS/cm)</label>
+          <div class="range-row">
+            <input type="number" id="pEcMin" step="any" inputmode="decimal" aria-label="Nutrient strength minimum">
+            <input type="number" id="pEcMax" step="any" inputmode="decimal" aria-label="Nutrient strength maximum">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Water temperature (&deg;C)</label>
+          <div class="range-row">
+            <input type="number" id="pTempMin" step="0.5" inputmode="decimal" aria-label="Temperature minimum">
+            <input type="number" id="pTempMax" step="0.5" inputmode="decimal" aria-label="Temperature maximum">
+          </div>
+        </div>
+        <p class="form-error" id="paramsError" role="alert" hidden></p>
+        <div class="modal-buttons" style="justify-content:flex-start">
+          <button type="submit" class="btn btn-green">Save ranges</button>
+          <button type="button" id="paramsReset" class="btn btn-plain">Reset to defaults</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Accounts -->
+    <section id="accounts" class="tab-content">
+      <h2>&#128100; Accounts &amp; Google Drive Sync</h2>
+      
+      <form id="driveSyncForm" class="panel" style="border-left: 5px solid #2563eb;" novalidate>
+        <h3>&#9729;&#65039; Google Drive Auto-Sync Setup</h3>
+        <p class="muted small" style="margin-bottom:0.75rem">Naka-link na ang iyong Google Apps Script Web App URL para sa awtomatikong pagsi-sync ng data sa iyong Google Drive.</p>
+        <div class="form-group">
+          <label for="gasUrlInput">Google Apps Script Web App URL</label>
+          <input type="url" id="gasUrlInput" readonly>
+        </div>
+        <div class="toolbar" style="margin:0">
+          <button type="button" id="manualSyncBtnAccount" class="btn btn-blue">Save to Google Drive Now</button>
+          <button type="button" id="manualPullBtnAccount" class="btn btn-plain">Load from Google Drive</button>
+        </div>
+      </form>
+
+      <form id="nameForm" class="panel" novalidate>
+        <div class="form-group">
+          <label for="nameInput">Your name</label>
+          <input type="text" id="nameInput" maxlength="40" autocomplete="given-name">
+          <p class="hint">Shown in the greeting on the Home tab.</p>
+        </div>
+        <button type="submit" class="btn btn-green">Save name</button>
+      </form>
+
+      <div class="panel">
+        <h3>Local Backup and Restore</h3>
+        <p class="muted small" style="margin-bottom:0.75rem">Download a manual JSON file backup or restore from a previous file.</p>
+        <div class="toolbar" style="margin:0">
+          <button type="button" id="backupBtn" class="btn btn-blue">Download backup (.json)</button>
+          <button type="button" id="restoreBtn" class="btn btn-plain">Restore from backup</button>
+          <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <dialog id="batchDialog" aria-labelledby="batchTitle">
+    <h3 id="batchTitle">Edit batch</h3>
+    <form id="batchForm" novalidate>
+      <div class="form-group">
+        <label>Batch ID</label>
+        <div class="readonly-value" id="bId"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="bColor">Color code</label>
+          <select id="bColor"></select>
+        </div>
+        <div class="form-group">
+          <label for="bCrop">Crop</label>
+          <select id="bCrop"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="bVariety">Variety</label>
+        <input type="text" id="bVariety" maxlength="60">
+      </div>
+      <div class="form-group">
+        <label for="bDas">DAS: date sown</label>
+        <input type="date" id="bDas">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="bDat">Days from sowing to transplant</label>
+          <input type="number" id="bDat" min="1" max="60" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label for="bHarvest">Days from transplant to harvest</label>
+          <input type="number" id="bHarvest" min="7" max="120" inputmode="numeric">
+        </div>
+      </div>
+      <p class="hint muted small" id="bPreview" style="margin:-0.5rem 0 1rem"></p>
+      <div class="form-group">
+        <label for="bRemarks">Remarks</label>
+        <textarea id="bRemarks" rows="3" maxlength="500"></textarea>
+      </div>
+      <p class="form-error" id="batchError" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" id="batchCancel" class="btn btn-plain">Cancel</button>
+        <button type="submit" class="btn btn-green">Save changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="logDialog" aria-labelledby="logTitle">
+    <h3 id="logTitle">Log a reading</h3>
+    <form id="logForm" novalidate>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="logBatch">Batch</label>
+          <select id="logBatch"></select>
+        </div>
+        <div class="form-group">
+          <label for="logDate">Date</label>
+          <input type="date" id="logDate">
+          <p class="hint" id="logDayHint"></p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="logHeight">Plant height (cm)</label>
+          <input type="number" id="logHeight" step="any" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="logLeaves">Leaf count</label>
+          <input type="number" id="logLeaves" step="1" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label for="logRoot">Longest root (cm)</label>
+          <input type="number" id="logRoot" step="any" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="logLevel">Water level (% of full)</label>
+          <input type="number" id="logLevel" step="any" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="logPh">Solution pH</label>
+          <input type="number" id="logPh" step="0.1" inputmode="decimal">
+          <p class="hint" id="logPhHint"></p>
+        </div>
+        <div class="form-group">
+          <label for="logEc" id="logEcLabel">EC (mS/cm)</label>
+          <input type="number" id="logEc" step="any" inputmode="decimal">
+          <p class="hint" id="logEcHint"></p>
+        </div>
+        <div class="form-group">
+          <label for="logTemp">Water temperature (&deg;C)</label>
+          <input type="number" id="logTemp" step="0.1" inputmode="decimal">
+          <p class="hint" id="logTempHint"></p>
+        </div>
+        <div class="form-group">
+          <label for="logCondition">Plant condition</label>
+          <select id="logCondition"></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="logRootHealth">Root Health Status</label>
+          <select id="logRootHealth">
+            <option value="White & Healthy">White &amp; Healthy</option>
+            <option value="Slightly Tan">Slightly Tan (Normal Stain)</option>
+            <option value="Brown / Slimy (Alert)">Brown / Slimy (Root Rot Alert)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="logShade">Shade Net / Light Exposure</label>
+          <select id="logShade">
+            <option value="Shade Net Closed (50% Sun)">Shade Net Closed (50% Sun)</option>
+            <option value="Shade Net Open (Full Sun)">Shade Net Open (Full Sun)</option>
+            <option value="Overcast / Rainy Day">Overcast / Rainy Day</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="logLightHours">Direct/Bright Light Hours</label>
+          <input type="number" id="logLightHours" step="0.5" min="0" max="24" placeholder="e.g. 6" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="logTopupLiters">Water Top-Up / Refill (Liters)</label>
+          <input type="number" id="logTopupLiters" step="0.1" min="0" placeholder="0 if none" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="logNotes">Notes</label>
+        <textarea id="logNotes" rows="2" maxlength="500"></textarea>
+      </div>
+      <p class="form-error" id="logError" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" id="logCancel" class="btn btn-plain">Cancel</button>
+        <button type="submit" class="btn btn-green">Save reading</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="supplyDialog" aria-labelledby="supplyTitle">
+    <h3 id="supplyTitle">Add Supply Item</h3>
+    <form id="supplyForm" novalidate>
+      <div class="form-group">
+        <label for="supDate">Date</label>
+        <input type="date" id="supDate" required>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="supCategory">Category</label>
+          <select id="supCategory">
+            <option value="Nutrient">Nutrient</option>
+            <option value="Seeds">Seeds</option>
+            <option value="Growing Media">Growing Media</option>
+            <option value="Tools">Tools</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="supItem">Item Name</label>
+          <input type="text" id="supItem" required maxlength="60">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="supQty">Quantity</label>
+          <input type="number" id="supQty" step="any" min="0" required inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="supUnit">Unit</label>
+          <input type="text" id="supUnit" placeholder="e.g. Liter, gram, pcs" required maxlength="20">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="supCost">Estimated Cost (&#8369;)</label>
+        <input type="number" id="supCost" step="any" min="0" required inputmode="decimal">
+      </div>
+      <p class="form-error" id="supplyError" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" id="supplyCancel" class="btn btn-plain">Cancel</button>
+        <button type="submit" class="btn btn-green">Save Supply</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="prodReportDialog" aria-labelledby="prodReportTitle">
+    <h3 id="prodReportTitle">Add Production Activity</h3>
+    <form id="prodReportForm" novalidate>
+      <div class="form-group">
+        <label for="prDate">Date</label>
+        <input type="date" id="prDate" required>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="prCrop">Crop</label>
+          <input type="text" id="prCrop" required maxlength="50">
+        </div>
+        <div class="form-group">
+          <label for="prWork">Nature of Work</label>
+          <select id="prWork">
+            <option value="Sowing">Sowing</option>
+            <option value="Transplant">Transplant</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Pruning">Pruning</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="prQty">Quantity</label>
+          <input type="number" id="prQty" min="1" required inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label for="prUnit">Unit</label>
+          <input type="text" id="prUnit" value="pcs" maxlength="20" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="prExpDate">Expected Harvest Date</label>
+        <input type="date" id="prExpDate" required>
+      </div>
+      <p class="form-error" id="prodReportError" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" id="prodReportCancel" class="btn btn-plain">Cancel</button>
+        <button type="submit" class="btn btn-green">Save Report</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="ghLogDialog" aria-labelledby="ghLogTitle">
+    <h3 id="ghLogTitle">Add Environmental Log</h3>
+    <form id="ghLogForm" novalidate>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="ghDate">Date</label>
+          <input type="date" id="ghDate" required>
+        </div>
+        <div class="form-group">
+          <label for="ghTime">Time Slot</label>
+          <select id="ghTime">
+            <option value="9:00 AM">9:00 AM</option>
+            <option value="2:00 PM">2:00 PM</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="ghTemp">Temperature (&deg;C)</label>
+          <input type="number" id="ghTemp" step="0.1" required inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="ghHum">Humidity (%)</label>
+          <input type="number" id="ghHum" step="1" min="0" max="100" required inputmode="numeric">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="ghPh">pH Level</label>
+          <input type="number" id="ghPh" step="0.1" min="0" max="14" required inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="ghTds">TDS / EC (ppm)</label>
+          <input type="number" id="ghTds" step="1" min="0" required inputmode="numeric">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="ghWaterTemp">Reservoir Water Temp (&deg;C)</label>
+          <input type="number" id="ghWaterTemp" step="0.1" placeholder="Alert if > 28°C" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="ghShade">Shade Net Status</label>
+          <select id="ghShade">
+            <option value="Closed (Shaded)">Closed (Shaded)</option>
+            <option value="Open (Full Light)">Open (Full Light)</option>
+          </select>
+        </div>
+      </div>
+      <p class="form-error" id="ghLogError" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" id="ghLogCancel" class="btn btn-plain">Cancel</button>
+        <button type="submit" class="btn btn-green">Save Log</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="prodInvDialog" aria-labelledby="prodInvTitle">
+    <h3 id="prodInvTitle">Add Greenhouse Record</h3>
+    <form id="prodInvForm" novalidate>
+      <div class="form-group">
+        <label for="piGh">Greenhouse # / Section</label>
+        <input type="text" id="piGh" placeholder="e.g. GH-01" required maxlength="40">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="piHoles">Total Holes / Capacity</label>
+          <input type="number" id="piHoles" min="1" required inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label for="piSick">Sick Plants Count</label>
+          <input type="number" id="piSick" min="0" value="0" required inputmode="numeric">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="piCause">Cause of Sickness</label>
+        <input type="text" id="piCause" placeholder="e.g. Pests, Nutrient Def, Heat Stress" required maxlength="100">
+      </div>
+      <p class="form-error" id="prodInvError" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" id="prodInvCancel" class="btn btn-plain">Cancel</button>
+        <button type="submit" class="btn btn-green">Save Inventory</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="harvestDialog" aria-labelledby="harvestTitle">
+    <h3 id="harvestTitle">Add Harvest Record</h3>
+    <form id="harvestForm" novalidate>
+      <div class="form-group">
+        <label for="hvDate">Date</label>
+        <input type="date" id="hvDate" required>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="hvCrop">Crop Name</label>
+          <input type="text" id="hvCrop" required maxlength="50">
+        </div>
+        <div class="form-group">
+          <label for="hvGh">Greenhouse #</label>
+          <input type="text" id="hvGh" placeholder="e.g. GH-01" required maxlength="30">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="hvPlants">Number of Plants (#)</label>
+          <input type="number" id="hvPlants" min="1" required inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label for="hvWeight">Weight (kg)</label>
+          <input type="number" id="hvWeight" step="any" min="0" required inputmode="decimal">
+        </div>
+      </div>
+      <p class="form-error" id="harvestError" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" id="harvestCancel" class="btn btn-plain">Cancel</button>
+        <button type="submit" class="btn btn-green">Save Harvest</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="costingDialog" aria-labelledby="costingTitle">
+    <h3 id="costingTitle">Add Costing Analysis</h3>
+    <form id="costingForm" novalidate>
+      <div class="form-group">
+        <label for="coCrop">Crop / Item Name</label>
+        <input type="text" id="coCrop" required maxlength="50">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="coCost">Total Cost (&#8369;)</label>
+          <input type="number" id="coCost" step="any" min="0" required inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label for="coSales">Total Sales (&#8369;)</label>
+          <input type="number" id="coSales" step="any" min="0" required inputmode="decimal">
+        </div>
+      </div>
+      <p class="form-error" id="costingError" role="alert" hidden></p>
+      <div class="modal-buttons">
+        <button type="button" id="costingCancel" class="btn btn-plain">Cancel</button>
+        <button type="submit" class="btn btn-green">Save Analysis</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmMessage"></p>
+    <div class="modal-buttons">
+      <button type="button" id="confirmCancel" class="btn btn-plain">Cancel</button>
+      <button type="button" id="confirmOk" class="btn btn-red">Confirm</button>
+    </div>
+  </dialog>
+
+  <!-- Modal for Smart Notifications & Daily Reminders -->
+  <dialog id="remindersDialog" aria-labelledby="remindersModalTitle">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+      <h3 id="remindersModalTitle" style="margin:0;">&#128276; Smart Notifications &amp; Daily Reminders</h3>
+      <button type="button" id="testSoundBtn" class="btn btn-plain btn-sm" title="Subukan ang notification chime">&#128266; Test Chime</button>
+    </div>
+    <ul class="task-list" id="reminderList"></ul>
+    <div class="modal-buttons">
+      <button type="button" id="closeRemindersBtn" class="btn btn-green">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Modal for Today's Schedule -->
+  <dialog id="scheduleDialog" aria-labelledby="dayHeading">
+    <h3 id="dayHeading" style="margin-bottom:0.75rem;">&#128197; Today's Schedule</h3>
+    <ul class="task-list" id="dayTasks"></ul>
+    <div class="modal-buttons">
+      <button type="button" id="closeScheduleBtn" class="btn btn-green">Close</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <footer>
+    <p>&copy; <span id="year"></span> Deedee's Greenhouse &amp; Hydroponics. All rights reserved.</p>
+  </footer>
+
+  <script>
+  (function () {
+    'use strict';
+
+    function $(id) { return document.getElementById(id); }
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+    function pad(n, w) { return String(n).padStart(w || 2, '0'); }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function numOrNull(v) {
+      if (v === null || v === undefined || v === '') return null;
+      var n = Number(v);
+      return isFinite(n) ? n : null;
+    }
+    function clampInt(v, min, max, fallback) {
+      var n = parseInt(v, 10);
+      if (!isFinite(n)) return fallback;
+      return Math.min(max, Math.max(min, n));
+    }
+
+    function toISO(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function fromISO(s) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+      if (!m) return null;
+      var d = new Date(+m[1], +m[2] - 1, +m[3]);
+      return d.getMonth() === +m[2] - 1 ? d : null;
+    }
+    function addDaysISO(s, n) { var d = fromISO(s); d.setDate(d.getDate() + n); return toISO(d); }
+    function daysBetween(a, b) {
+      var A = fromISO(a), B = fromISO(b);
+      return Math.round((Date.UTC(B.getFullYear(), B.getMonth(), B.getDate()) - Date.UTC(A.getFullYear(), A.getMonth(), A.getDate())) / 86400000);
+    }
+    function fmt(s) {
+      var d = fromISO(s);
+      return d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    }
+    function fmtShort(s) {
+      var d = fromISO(s);
+      return d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    }
+    function todayISO() { return toISO(new Date()); }
+
+    var STORE_KEY = 'deedee_greenhouse_v3';
+    var FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycbxQMzKuKKJqVnnx5JREKL7-Zw3CU3DaZoLFUTdFjkEK57Q48oTqS0mB5wrquVxtSB0m/exec';
+    var COLORS = { red: 'Red', green: 'Green', blue: 'Blue', yellow: 'Yellow', orange: 'Orange', purple: 'Purple' };
+    var CROPS = ['Lettuce', 'Petchay', 'Pakchoy', 'Kangkong', 'Other'];
+    var CONDITIONS = ['Healthy', 'Slow growth', 'Yellowing leaves', 'Tip burn', 'Wilting', 'Root browning or slime', 'Algae in reservoir', 'Pests'];
+    var PPM_PER_EC = 500;
+    var METRICS = {
+      height: { label: 'Height', unit: 'cm', dec: 1, zero: true },
+      leaves: { label: 'Leaves', unit: '', dec: 0, zero: true },
+      root:   { label: 'Root length', unit: 'cm', dec: 1, zero: true },
+      ph:     { label: 'Solution pH', unit: '', dec: 1 },
+      ec:     { label: 'EC', unit: 'mS/cm', dec: 2 },
+      temp:   { label: 'Water temp', unit: '\u00B0C', dec: 1 },
+      level:  { label: 'Water level', unit: '%', dec: 0, zero: true }
+    };
+    var METRIC_KEYS = ['height', 'leaves', 'root', 'ph', 'ec', 'temp', 'level'];
+    var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var DEFAULT_SETTINGS = {
+      name: 'Derick',
+      unit: 'ec',
+      location: 'ALL',
+      targets: { ph: { min: 5.8, max: 6.5 }, ec: { min: 0.8, max: 1.5 }, temp: { min: 18, max: 26 } }
+    };
+
+    var DIAGNOSTICS = {
+      tipburn: {
+        title: 'Tip Burn (Kulang sa Calcium / Heat Stress)',
+        cause: 'Hindi na-aabsorb ng maayos ang Calcium dahil sa mataas na temperatura o kulang sa hangin (airflow) sa paligid ng dahon.',
+        remedy: [
+          'Maglagay ng maliit na electric fan para magkaroon ng sirkulasyon ng hangin sa itaas ng mga halaman.',
+          'Bawasan ang EC / lakas ng pataba kung masyadong mataas.',
+          'I-maintain ang temperature ng tubig sa ibaba ng 28°C.'
+        ]
+      },
+      yellowing: {
+        title: 'Yellowing Leaves (Nitrogen Deficiency / High pH)',
+        cause: 'Maaaring mataas ang pH level (>6.5) kaya hindi maka-absorb ng Nitrogen ang halaman, o kulang na ang nutrient solution.',
+        remedy: [
+          'I-check ang pH level at i-adjust ito papuntang 5.8 - 6.2 gamit ang pH Down.',
+          'Sukatin ang EC/TDS. Kung mas mababa sa target range, magdagdag ng panibagong A&B / MasterBlend mix.'
+        ]
+      },
+      rootrot: {
+        title: 'Root Rot / Root Slime (Maitim na Ugat)',
+        cause: 'Mataas na temperatura ng tubig (>28°C) at kawalan ng dissolved oxygen sa reservoir.',
+        remedy: [
+          'I-drain at linisin ang reservoir tank gamit ang diluted hydrogen peroxide o malinis na tubig.',
+          'Palamigin ang tubig gamit ang paglalagay ng shades sa tank.',
+          'Gupitin ang mga bulok o maiitim na bahagi ng ugat.'
+        ]
+      },
+      algae: {
+        title: 'Algae Growth (Paglumot)',
+        cause: 'Sumisikat ang araw sa loob ng tubig/reservoir o netpot, na nagiging sanhi ng pagtubo ng lumot na umaagaw sa sustansya.',
+        remedy: [
+          'Takpan ng aluminum foil o itim na plastic ang anumang bahagi ng container na natatamaan ng liwanag.',
+          'Linisin ang netpot at palitan ang nutrient solution.'
+        ]
+      },
+      aphids: {
+        title: 'Aphids / Pest Infestation',
+        cause: 'Mga insekto na sumisipsip ng katas ng dahon.',
+        remedy: [
+          'Mag-spray ng Organic Neem Oil Solution (5ml Neem Oil + 2ml Dishwashing liquid sa 1 Litrong tubig) tuwing hapon.',
+          'Ibukod o tanggalin ang sobrang napinsalang halaman.'
+        ]
+      },
+      stunted: {
+        title: 'Stunted Growth (Mabagal Tumubo)',
+        cause: 'Mababang EC/TDS, maling pH, o kulang sa sikat ng araw (at least 4-6 hours direct/indirect light needed).',
+        remedy: [
+          'I-tsek ang ilaw/araw na natatanggap ng taniman.',
+          'Dagdagan ang lasa/strength ng pataba papuntang 1.2 - 1.4 EC.'
+        ]
+      }
+    };
+
+    function freshState() {
+      return {
+        version: 3,
+        settings: clone(DEFAULT_SETTINGS),
+        batches: [
+          { id: "B002", color: "green", crop: "Lettuce", variety: "Olmetie", das: "2026-11-08", transplantDays: 10, harvestDays: 35, remarks: "" },
+          { id: "B001", color: "green", crop: "Lettuce", variety: "Olmetie", das: "2026-11-19", transplantDays: 10, harvestDays: 35, remarks: "" }
+        ],
+        logs: [], supplies: [], prodReports: [], ghLogs: [], prodInvs: [], harvests: [], costings: [],
+        nextNum: 3, freeNums: []
+      };
+    }
+
+    var state = freshState();
+    var ui = { homeDate: null, growthBatch: null, chartMetric: 'height', editing: null, logEditing: null, paramUnit: 'ec' };
+    var pendingConfirm = null;
+
+    function newId(prefix) { return (prefix || 'ID') + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+    function normalize(raw) {
+      var s = freshState();
+      if (!raw || typeof raw !== 'object') return s;
+
+      var st = raw.settings || {};
+      if (typeof st.name === 'string' && st.name.trim()) s.settings.name = st.name.trim().slice(0, 40);
+      if (st.unit === 'ppm') s.settings.unit = 'ppm';
+      if (st.location) s.settings.location = st.location;
+      ['ph', 'ec', 'temp'].forEach(function (k) {
+        var t = st.targets && st.targets[k];
+        if (t && isFinite(t.min) && isFinite(t.max) && +t.min < +t.max) s.settings.targets[k] = { min: +t.min, max: +t.max };
+      });
+
+      if (Array.isArray(raw.batches) && raw.batches.length > 0) {
+        s.batches = [];
+        raw.batches.forEach(function (b) {
+          if (!b || typeof b.id !== 'string' || !/^B\d+$/.test(b.id) || !fromISO(b.das)) return;
+          if (s.batches.some(function (x) { return x.id === b.id; })) return;
+          s.batches.push({
+            id: b.id,
+            color: COLORS[b.color] ? b.color : 'green',
+            crop: CROPS.indexOf(b.crop) >= 0 ? b.crop : 'Other',
+            variety: String(b.variety || '').slice(0, 60),
+            das: b.das,
+            transplantDays: clampInt(b.transplantDays, 1, 60, 10),
+            harvestDays: clampInt(b.harvestDays, 7, 120, 35),
+            remarks: String(b.remarks || '').slice(0, 500)
+          });
+        });
+      }
+
+      var ids = {};
+      s.batches.forEach(function (b) { ids[b.id] = true; });
+      (Array.isArray(raw.logs) ? raw.logs : []).forEach(function (l) {
+        if (!l || !ids[l.batchId] || !fromISO(l.date)) return;
+        s.logs.push({
+          id: String(l.id || newId('L')),
+          batchId: l.batchId,
+          date: l.date,
+          height: numOrNull(l.height),
+          leaves: numOrNull(l.leaves),
+          root: numOrNull(l.root),
+          ph: numOrNull(l.ph),
+          ec: numOrNull(l.ec),
+          temp: numOrNull(l.temp),
+          level: numOrNull(l.level),
+          condition: CONDITIONS.indexOf(l.condition) >= 0 ? l.condition : 'Healthy',
+          rootHealth: String(l.rootHealth || 'White & Healthy'),
+          shade: String(l.shade || 'Shade Net Closed (50% Sun)'),
+          lightHours: numOrNull(l.lightHours),
+          topupLiters: numOrNull(l.topupLiters),
+          topup: !!(l.topup || (numOrNull(l.topupLiters) > 0)),
+          notes: String(l.notes || '').slice(0, 500)
+        });
+      });
+
+      if (Array.isArray(raw.supplies)) s.supplies = raw.supplies;
+      if (Array.isArray(raw.prodReports)) s.prodReports = raw.prodReports;
+      if (Array.isArray(raw.ghLogs)) s.ghLogs = raw.ghLogs;
+      if (Array.isArray(raw.prodInvs)) s.prodInvs = raw.prodInvs;
+      if (Array.isArray(raw.harvests)) s.harvests = raw.harvests;
+      if (Array.isArray(raw.costings)) s.costings = raw.costings;
+
+      s.nextNum = clampInt(raw.nextNum, 1, 99999, 3);
+      s.batches.forEach(function (b) {
+        var n = parseInt(b.id.slice(1), 10);
+        if (n >= s.nextNum) s.nextNum = n + 1;
+      });
+      var seen = {};
+      (Array.isArray(raw.freeNums) ? raw.freeNums : []).forEach(function (n) {
+        n = Number(n);
+        if (Number.isInteger(n) && n > 0 && n < s.nextNum && !ids['B' + pad(n, 3)] && !seen[n]) seen[n] = true;
+      });
+      s.freeNums = Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
+      return s;
+    }
+
+    function updateSyncUI(status, color) {
+      if ($('syncStatus')) $('syncStatus').textContent = status;
+      if ($('syncDot')) $('syncDot').style.background = color;
+    }
+
+    function pushToGoogleDrive(isManual) {
+      updateSyncUI('Saving to Google Drive...', '#eab308');
+      fetch(FIXED_GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(state)
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data && data.status === 'success') {
+          var timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          updateSyncUI('Google Drive Synced (' + timeStr + ')', '#22c55e');
+          if (isManual) toast('Successfully saved to Google Drive!');
+        } else {
+          updateSyncUI('Drive Sync Error (Saved Locally)', '#ef4444');
+          if (isManual) toast('Sync failed: ' + (data.message || 'Check deployment'));
+        }
+      })
+      .catch(function() {
+        updateSyncUI('Offline Mode (Saved Locally)', '#f97316');
+        if (isManual) toast('Offline or network issue.');
+      });
+    }
+
+    function pullFromGoogleDrive(isManual) {
+      updateSyncUI('Checking Google Drive...', '#eab308');
+      fetch(FIXED_GAS_URL)
+      .then(function(res) { return res.json(); })
+      .then(function(cloudData) {
+        if (cloudData && Array.isArray(cloudData.batches) && cloudData.batches.length > 0) {
+          state = normalize(cloudData);
+          localStorage.setItem(STORE_KEY, JSON.stringify(state));
+          renderAll();
+          var timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          updateSyncUI('Google Drive Synced (' + timeStr + ')', '#22c55e');
+          if (isManual) toast('Data loaded successfully from Google Drive!');
+        } else {
+          updateSyncUI('Google Drive Connected (Ready)', '#22c55e');
+          if (isManual) toast('No existing backup in Drive yet.');
+        }
+      })
+      .catch(function() {
+        updateSyncUI('Offline Mode', '#f97316');
+        if (isManual) toast('Could not connect to Google Drive.');
+      });
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        pushToGoogleDrive(false);
+        return true;
+      } catch (e) {
+        toast('Could not save locally.');
+        return false;
+      }
+    }
+
+    function load() {
+      try {
+        var v3 = localStorage.getItem(STORE_KEY);
+        if (v3) { 
+          state = normalize(JSON.parse(v3)); 
+        } else {
+          state = freshState();
+          save();
+        }
+      } catch (e) {
+        state = freshState();
+      }
+    }
+
+    function getBatch(id) { return state.batches.find(function (b) { return b.id === id; }); }
+    function peekBatchId() { return 'B' + pad(state.freeNums.length ? state.freeNums[0] : state.nextNum, 3); }
+    function takeBatchId() {
+      var id = peekBatchId();
+      if (state.freeNums.length) state.freeNums.shift(); else state.nextNum++;
+      return id;
+    }
+    function releaseBatchId(id) {
+      var n = parseInt(id.slice(1), 10);
+      if (Number.isInteger(n) && state.freeNums.indexOf(n) < 0) {
+        state.freeNums.push(n);
+        state.freeNums.sort(function (a, b) { return a - b; });
+      }
+    }
+    function schedule(b) {
+      var dat = addDaysISO(b.das, b.transplantDays);
+      return {
+        das: b.das,
+        dat: dat,
+        weeks: [1, 2, 3, 4].map(function (n) { return addDaysISO(dat, 7 * n); }),
+        harvest: addDaysISO(dat, b.harvestDays)
+      };
+    }
+    function milestones(b) {
+      var s = schedule(b);
+      var list = [{ date: s.das, label: 'Sow seeds' }, { date: s.dat, label: 'Transplant to container' }];
+      s.weeks.forEach(function (d, i) { list.push({ date: d, label: 'Week ' + (i + 1) + ' check' }); });
+      list.push({ date: s.harvest, label: 'Harvest' });
+      return list;
+    }
+    function batchName(b) { return b.id + ': ' + (b.variety || b.crop); }
+    function ecToDisplay(v) { return state.settings.unit === 'ppm' ? v * PPM_PER_EC : v; }
+    function labelOf(key) { return key === 'ec' ? (state.settings.unit === 'ppm' ? 'TDS' : 'EC') : METRICS[key].label; }
+    function unitOf(key) { return key === 'ec' ? (state.settings.unit === 'ppm' ? 'ppm' : 'mS/cm') : METRICS[key].unit; }
+    function decOf(key) { return key === 'ec' ? (state.settings.unit === 'ppm' ? 0 : 2) : METRICS[key].dec; }
+    function showVal(key, v) {
+      if (v == null) return '\u2014';
+      return (key === 'ec' ? ecToDisplay(v) : v).toFixed(decOf(key));
+    }
+    function statusOf(key, v) {
+      var t = state.settings.targets[key];
+      if (!t || v == null) return null;
+      return v < t.min ? 'low' : v > t.max ? 'high' : 'ok';
+    }
+    function targetText(key) {
+      var t = state.settings.targets[key];
+      if (!t) return '';
+      var tidy = function (v) { return key === 'ec' ? showVal(key, v) : String(Number(v.toFixed(1))); };
+      return tidy(t.min) + '\u2013' + tidy(t.max) + (unitOf(key) ? ' ' + unitOf(key) : '');
+    }
+    function latestWith(logs, key) {
+      for (var i = logs.length - 1; i >= 0; i--) if (logs[i][key] != null) return logs[i];
+      return null;
+    }
+    function logsFor(batchId) {
+      return state.logs.filter(function (l) { return l.batchId === batchId; })
+        .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    }
+    function attentionFor(b) {
+      var logs = logsFor(b.id), out = [];
+      if (!logs.length) return out;
+      ['ph', 'ec', 'temp'].forEach(function (key) {
+        var l = latestWith(logs, key);
+        if (!l) return;
+        var st = statusOf(key, l[key]);
+        if (st && st !== 'ok') {
+          out.push(labelOf(key) + ' ' + showVal(key, l[key]) + (unitOf(key) ? ' ' + unitOf(key) : '') + ' is ' + (st === 'low' ? 'below' : 'above') + ' target ' + targetText(key) + ' (' + fmtShort(l.date) + ')');
+        }
+      });
+      var lastTemp = latestWith(logs, 'temp');
+      if (lastTemp && lastTemp.temp >= 28) {
+        out.push('HIGH WATER TEMP (' + lastTemp.temp + '°C on ' + fmtShort(lastTemp.date) + '): Above 28°C risks low oxygen & root rot — add ice bottles or shade!');
+      }
+      var last = logs[logs.length - 1];
+      if (last.rootHealth && last.rootHealth.indexOf('Brown') >= 0) {
+        out.push('ROOT HEALTH ALERT: ' + last.rootHealth + ' (' + fmtShort(last.date) + ') — check reservoir aeration & water temp.');
+      }
+      if (last.condition !== 'Healthy') out.push('Plants noted as: ' + last.condition.toLowerCase() + ' (' + fmtShort(last.date) + ')');
+      return out;
+    }
+    function stageOf(b, today) {
+      var day = daysBetween(b.das, today), sch = schedule(b);
+      if (day < 0) return { day: day, text: 'Sowing in ' + (-day) + ' day' + (-day === 1 ? '' : 's') };
+      if (day < b.transplantDays) return { day: day, text: 'Nursery' };
+      if (today >= sch.harvest) return { day: day, text: 'Ready to harvest' };
+      return { day: day, text: 'Week ' + (Math.floor(daysBetween(sch.dat, today) / 7) + 1) + ' post-transplant' };
+    }
+    function isActive(b, today) { return today >= b.das && today <= schedule(b).harvest; }
+
+    var toastTimer = null;
+    function toast(msg) {
+      var t = $('toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { t.hidden = true; }, 3000);
+    }
+    function showError(id, msg) { var e = $(id); if (e) { e.textContent = msg; e.hidden = false; } }
+    function hideError(id) { var e = $(id); if (e) e.hidden = true; }
+
+    function confirmAction(title, message, okLabel, fn) {
+      $('confirmTitle').textContent = title;
+      $('confirmMessage').textContent = message;
+      $('confirmOk').textContent = okLabel || 'Confirm';
+      pendingConfirm = fn;
+      $('confirmDialog').showModal();
+    }
+
+    function showTab(name) {
+      document.querySelectorAll('.tab-content').forEach(function (t) { t.classList.toggle('active', t.id === name); });
+      document.querySelectorAll('nav button, .bottom-nav button').forEach(function (b) {
+        if (b.dataset.tab === name) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+      });
+      window.scrollTo(0, 0);
+    }
+    function closeMenu() {
+      $('mainNav').classList.remove('show');
+      $('menuBtn').setAttribute('aria-expanded', 'false');
+    }
+
+    function download(name, text, type) {
+      var blob = new Blob([text], { type: type });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }
+    function csvCell(v) {
+      var s = String(v == null ? '' : v);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+
+    function playNotificationSound(isManual) {
+      try {
+        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        var ctx = new AudioCtx();
+        if (ctx.state === 'suspended') { ctx.resume(); }
+        var notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach(function(freq, i) {
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.14);
+          gain.gain.setValueAtTime(0.001, ctx.currentTime + i * 0.14);
+          gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + i * 0.14 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.14 + 0.45);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.14);
+          osc.stop(ctx.currentTime + i * 0.14 + 0.48);
+        });
+        if (isManual) toast('Notification chime played!');
+      } catch (e) {}
+    }
+
+    function renderHome() {
+      var today = todayISO();
+      if (!ui.homeDate || ui.homeDate < today) ui.homeDate = today;
+      if ($('greetingText')) {
+        $('greetingText').textContent = (new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening') + ', ' + state.settings.name;
+      }
+
+      // Update Active Batches Tile
+      var activeCount = state.batches.filter(function(b) { return isActive(b, today); }).length;
+      if ($('bentoActiveBatches')) $('bentoActiveBatches').textContent = activeCount;
+
+      function tasksForDay(iso) {
+        var list = [];
+        state.batches.forEach(function (b) {
+          var sch = schedule(b);
+          if (sch.das === iso) list.push({ batch: b.id, color: b.color, short: 'Sow ' + b.id, full: 'Sow seeds' });
+          if (sch.dat === iso) list.push({ batch: b.id, color: b.color, short: 'Transplant', full: 'Transplant to container' });
+          sch.weeks.forEach(function (wDate, idx) {
+            if (wDate === iso) list.push({ batch: b.id, color: b.color, short: 'W' + (idx + 1) + ' Foliar', full: 'Week ' + (idx + 1) + ' Foliar Spray & Check' });
+          });
+          if (sch.harvest === iso) list.push({ batch: b.id, color: b.color, short: 'Harvest!', full: 'Harvest' });
+
+          if (iso === today && b.crop === 'Lettuce' && isActive(b, today) &&
+              !state.logs.some(function (l) { return l.batchId === b.id && l.date === today; })) {
+            list.push({ batch: b.id, color: b.color, short: 'Log ' + b.id, full: 'Log today\u2019s readings' });
+          }
+        });
+        state.prodReports.forEach(function (p) {
+          if (p.expDate === iso) list.push({ batch: p.crop, color: '#10b981', short: 'Exp. Harvest', full: 'Expected Harvest: ' + p.crop });
+        });
+        return list;
+      }
+
+      var html = '';
+      for (var i = 0; i < 7; i++) {
+        var iso = addDaysISO(today, i), d = fromISO(iso), sel = iso === ui.homeDate;
+        var dayTasksList = tasksForDay(iso);
+        var dotsHtml = '';
+        if (dayTasksList.length) {
+          dotsHtml = dayTasksList.slice(0, 4).map(function(t) {
+            return '<span class="day-dot" style="' + (sel ? '' : 'background:' + t.color) + '"></span>';
+          }).join('');
+        }
+        var tagText = dayTasksList.length === 0
+          ? 'Rest'
+          : (dayTasksList.length === 1 ? esc(dayTasksList[0].short) : dayTasksList.length + ' Tasks');
+
+        html += '<button type="button" class="date' + (i === 0 ? ' today' : '') + (sel ? ' selected' : '') +
+          '" data-action="pick-date" data-date="' + iso + '" aria-pressed="' + sel + '">' +
+          '<span class="day-name">' + (i === 0 ? 'Today' : DAY_NAMES[d.getDay()]) + '</span>' +
+          '<span class="day-number">' + d.getDate() + '</span>' +
+          '<span class="day-dots">' + dotsHtml + '</span>' +
+          '<span class="day-tag">' + tagText + '</span></button>';
+      }
+      if ($('dateStrip')) $('dateStrip').innerHTML = html;
+
+      var isToday = ui.homeDate === today;
+      var scheduleLabel = isToday ? "Today's Schedule" : fmtShort(ui.homeDate) + ' Schedule';
+      if ($('dayHeading')) $('dayHeading').innerHTML = isToday ? '&#128197; Today\'s Schedule' : '&#128197; ' + fmt(ui.homeDate);
+      if ($('scheduleTileTitle')) $('scheduleTileTitle').textContent = scheduleLabel;
+      if ($('greetingSub')) $('greetingSub').textContent = isToday ? 'Here are your hydroponics tasks for today' : 'Scheduled items for ' + fmt(ui.homeDate);
+
+      var remHtml = '';
+      var remCount = 0;
+      var hasFoliarDueToday = false;
+      state.batches.forEach(function(b) {
+        if (isActive(b, today)) {
+          var sch = schedule(b);
+          sch.weeks.forEach(function(wDate, idx) {
+            var diff = daysBetween(today, wDate);
+            if (diff === 0) {
+              hasFoliarDueToday = true;
+              remCount++;
+              remHtml += '<li><span class="swatch" style="background:' + b.color + '" aria-hidden="true"></span>' +
+                '<span class="grow"><strong>&#127807; Foliar Spray Today (Week ' + (idx + 1) + ') for Batch ' + esc(b.id) + ' (' + esc(b.variety || b.crop) + '):</strong> Oras na para sa weekly foliar nutrient/organic spray!</span>' +
+                '<button type="button" class="btn btn-green btn-sm" data-action="open-growth" data-id="' + esc(b.id) + '">View Batch</button></li>';
+            } else if (diff > 0 && diff <= 2) {
+              remCount++;
+              remHtml += '<li><span class="swatch" style="background:' + b.color + '" aria-hidden="true"></span>' +
+                '<span class="grow"><strong>&#127807; Upcoming Foliar Spray (Week ' + (idx + 1) + ') for Batch ' + esc(b.id) + ' (' + esc(b.variety || b.crop) + '):</strong> Nakatakda sa ' + fmtShort(wDate) + ' (' + (diff === 1 ? 'Bukas' : 'Sa loob ng ' + diff + ' araw') + ').</span></li>';
+            }
+          });
+
+          var logs = logsFor(b.id);
+          var lastLog = logs.length ? logs[logs.length - 1] : null;
+          if (!lastLog || daysBetween(lastLog.date, today) >= 3) {
+            remCount++;
+            remHtml += '<li><span class="grow"><strong>' + esc(b.id) + ' (' + esc(b.variety) + '):</strong> Lampas 3 araw nang walang EC/pH &amp; water temp check.</span>' +
+              '<button type="button" class="btn btn-blue btn-sm" data-action="log-batch" data-id="' + esc(b.id) + '">Log Now</button></li>';
+          }
+          if (lastLog && lastLog.temp != null && lastLog.temp >= 28) {
+            remCount++;
+            remHtml += '<li><span class="grow"><strong>&#127777;&#65039; Mainit ang Tubig sa ' + esc(b.id) + ' (' + lastLog.temp + '&deg;C):</strong> Lampas 28&deg;C! Maglagay ng shade o frozen water bottle para iwas root rot.</span></li>';
+          }
+        }
+      });
+      if (!remHtml) {
+        remHtml = '<li class="muted">Lahat ng aktibong batch ay updated at walang importanteng paalala.</li>';
+      }
+      if ($('reminderList')) $('reminderList').innerHTML = remHtml;
+      if ($('reminderBadgeCount')) $('reminderBadgeCount').textContent = remCount;
+      if ($('reminderTileSub')) $('reminderTileSub').textContent = remCount ? remCount + ' alert' + (remCount > 1 ? 's' : '') : 'All updated';
+
+      if (hasFoliarDueToday && !ui.foliarSoundPlayed) {
+        ui.foliarSoundPlayed = true;
+        playNotificationSound();
+      }
+
+      var items = '';
+      var schedCount = 0;
+      state.batches.forEach(function (b) {
+        milestones(b).forEach(function (m) {
+          if (m.date === ui.homeDate) {
+            schedCount++;
+            items += '<li><span class="swatch" style="background:' + b.color + '" aria-hidden="true"></span><span class="grow"><strong>' +
+              esc(b.id) + '</strong> ' + esc(b.crop) + (b.variety ? ' (' + esc(b.variety) + ')' : '') + ': ' + esc(m.label) + '</span></li>';
+          }
+        });
+        if (isToday && b.crop === 'Lettuce' && isActive(b, today) && today >= b.das &&
+            !state.logs.some(function (l) { return l.batchId === b.id && l.date === today; })) {
+          schedCount++;
+          items += '<li><span class="swatch" style="background:' + b.color + '" aria-hidden="true"></span><span class="grow"><strong>' +
+            esc(b.id) + '</strong> ' + esc(b.variety || b.crop) + ': log today\u2019s readings</span>' +
+            '<button type="button" class="btn btn-blue btn-sm" data-action="log-batch" data-id="' + esc(b.id) + '">Log</button></li>';
+        }
+      });
+      if ($('dayTasks')) $('dayTasks').innerHTML = items || '<li class="muted">Nothing scheduled for this day.</li>';
+      if ($('scheduleBadgeCount')) $('scheduleBadgeCount').textContent = schedCount;
+      if ($('scheduleTileSub')) $('scheduleTileSub').textContent = schedCount ? schedCount + ' task' + (schedCount > 1 ? 's' : '') : 'No tasks';
+
+      var flags = '';
+      state.batches.forEach(function (b) {
+        if (b.crop !== 'Lettuce') return;
+        attentionFor(b).forEach(function (msg) {
+          flags += '<li><span class="grow"><strong>' + esc(b.id) + '</strong> ' + esc(msg) + '</span>' +
+            '<button type="button" class="btn btn-plain btn-sm" data-action="open-growth" data-id="' + esc(b.id) + '">View</button></li>';
+        });
+      });
+      if ($('attentionList')) $('attentionList').innerHTML = flags;
+      if ($('attentionPanel')) $('attentionPanel').hidden = !flags;
+
+      // Render Active Batch Growth Progress Snapshot
+      var snapEl = $('homeGrowthSnapshot');
+      if (snapEl) {
+        var activeBatches = state.batches.filter(function(b) { return isActive(b, today); });
+        if (!activeBatches.length) {
+          snapEl.innerHTML = '<div class="muted small">Walang active batch ngayon. Magdagdag sa Batches tab para ma-track ang growth progress.</div>';
+        } else {
+          snapEl.innerHTML = activeBatches.map(function(b) {
+            var sch = schedule(b);
+            var totalDays = Math.max(1, daysBetween(b.das, sch.harvest));
+            var elapsed = Math.max(0, Math.min(totalDays, daysBetween(b.das, today)));
+            var pct = Math.round((elapsed / totalDays) * 100);
+            var stg = stageOf(b, today);
+            var bLogs = logsFor(b.id);
+            var last = bLogs.length ? bLogs[bLogs.length - 1] : null;
+            var totalTopup = bLogs.reduce(function(acc, item) { return acc + (Number(item.topupLiters) || 0); }, 0);
+            var waterTempBadge = '';
+            if (last && last.temp != null) {
+              var isHot = last.temp >= 28;
+              waterTempBadge = '<span class="badge ' + (isHot ? 'bad' : 'ok') + '" style="font-size:0.68rem;">Water: ' + last.temp + '&deg;C' + (isHot ? ' &#9888;' : '') + '</span>';
+            }
+            var rootBadge = last && last.rootHealth
+              ? '<span class="badge ' + (last.rootHealth.indexOf('Brown') >= 0 ? 'bad' : 'ok') + '" style="font-size:0.68rem;">Roots: ' + esc(last.rootHealth.split(' ')[0]) + '</span>'
+              : '';
+            var shadeInfo = last && last.shade ? esc(last.shade.replace('Shade Net ', '')) : 'No shade log';
+            var lightInfo = last && last.lightHours != null ? ' (' + last.lightHours + 'h)' : '';
+
+            var metricsLine = last
+              ? 'Height: <strong>' + (last.height != null ? last.height + ' cm' : '—') + '</strong> &bull; Leaves: <strong>' + (last.leaves != null ? last.leaves : '—') + '</strong> &bull; Refilled: <strong>' + totalTopup.toFixed(1) + ' L</strong>'
+              : 'Wala pang growth reading (Tap + Log)';
+            return '<div style="background:var(--surface-alt); border:1px solid var(--glass-border); border-radius:14px; padding:0.95rem 1rem;">' +
+              '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; gap:0.4rem; flex-wrap:wrap;">' +
+                '<div><span class="swatch" style="background:' + b.color + '; margin-right:6px;"></span><strong>' + esc(b.id) + '</strong> <span class="muted small">(' + esc(b.variety || b.crop) + ')</span></div>' +
+                '<span class="badge ok">' + esc(stg.text) + '</span>' +
+              '</div>' +
+              '<div style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.45rem;">' +
+                waterTempBadge + rootBadge +
+                '<span class="badge" style="background:rgba(255,255,255,0.45); color:var(--text); font-size:0.68rem;">&#9728;&#65039; ' + shadeInfo + lightInfo + '</span>' +
+              '</div>' +
+              '<div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--muted); margin-bottom:0.3rem;">' +
+                '<span>Day ' + elapsed + ' of ' + totalDays + '</span>' +
+                '<span><strong>' + pct + '%</strong> to Harvest (' + fmtShort(sch.harvest) + ')</span>' +
+              '</div>' +
+              '<div style="width:100%; height:8px; background:rgba(0,0,0,0.08); border-radius:999px; overflow:hidden; margin-bottom:0.55rem;">' +
+                '<div style="width:' + pct + '%; height:100%; background:var(--brand); border-radius:999px; transition:width 0.4s ease;"></div>' +
+              '</div>' +
+              '<div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; font-size:0.78rem;">' +
+                '<span class="muted">' + metricsLine + '</span>' +
+                '<button type="button" class="btn btn-blue btn-sm" data-action="log-batch" data-id="' + esc(b.id) + '">+ Log</button>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+        }
+      }
+    }
+
+    function fetchTandangSoraWeather() {
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=14.6819&longitude=121.0414&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=Asia%2FManila';
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data || !data.current) return;
+          var c = data.current;
+          var temp = Math.round(c.temperature_2m * 10) / 10;
+          var hum = c.relative_humidity_2m;
+          var feels = Math.round(c.apparent_temperature);
+          var code = c.weather_code;
+          var icon = '&#9925;';
+          var desc = 'Partly Cloudy';
+          if (code === 0) { icon = '&#9728;&#65039;'; desc = 'Clear Sky'; }
+          else if (code >= 1 && code <= 3) { icon = '&#9925;'; desc = 'Partly Cloudy'; }
+          else if (code >= 45 && code <= 48) { icon = '&#127787;&#65039;'; desc = 'Foggy'; }
+          else if (code >= 51 && code <= 67) { icon = '&#127783;&#65039;'; desc = 'Light Rain'; }
+          else if (code >= 80 && code <= 99) { icon = '&#9928;&#65039;'; desc = 'Rain / Thunder'; }
+
+          var heatWarn = temp >= 32 ? ' &bull; &#9888;&#65039; High Heat (Check Airflow)' : '';
+          if ($('weatherIcon')) $('weatherIcon').innerHTML = icon;
+          if ($('weatherTemp')) $('weatherTemp').innerHTML = temp + '&deg;C &bull; Tandang Sora, QC';
+          if ($('weatherMeta')) $('weatherMeta').innerHTML = desc + ' &bull; Humidity ' + hum + '% (Feels ' + feels + '&deg;C)' + heatWarn;
+        })
+        .catch(function() {
+          if ($('weatherTemp')) $('weatherTemp').innerHTML = 'Tandang Sora, QC';
+          if ($('weatherMeta')) $('weatherMeta').innerHTML = 'Offline &bull; Check GH Thermometer';
+        });
+    }
+
+    function calculateNutrients() {
+      if (!$('calcVolume') || !$('calcPreset')) return;
+      var liters = parseFloat($('calcVolume').value) || 0;
+      var preset = $('calcPreset').value;
+
+      var ratioMaster = 0.6, ratioEpsom = 0.3, ratioCalNit = 0.6;
+      if (preset === 'half') {
+        ratioMaster = 0.3; ratioEpsom = 0.15; ratioCalNit = 0.3;
+      } else if (preset === 'heavy') {
+        ratioMaster = 0.9; ratioEpsom = 0.45; ratioCalNit = 0.9;
+      }
+
+      if ($('resMasterblend')) $('resMasterblend').textContent = (liters * ratioMaster).toFixed(1) + ' g';
+      if ($('resEpsom')) $('resEpsom').textContent = (liters * ratioEpsom).toFixed(1) + ' g';
+      if ($('resCalNit')) $('resCalNit').textContent = (liters * ratioCalNit).toFixed(1) + ' g';
+    }
+
+    function handleDiagnostics() {
+      var val = $('diagSymptom').value;
+      var res = $('diagResult');
+      if (!val || !DIAGNOSTICS[val]) {
+        res.hidden = true;
+        return;
+      }
+      var info = DIAGNOSTICS[val];
+      $('diagTitle').textContent = info.title;
+      $('diagCause').textContent = info.cause;
+      $('diagRemedy').innerHTML = info.remedy.map(function(r){ return '<li>' + esc(r) + '</li>'; }).join('');
+      res.hidden = false;
+    }
+
+    function renderMonitoring() {
+      var tbody = $('tableBody'), cards = $('cardContainer');
+      if (!state.batches.length) {
+        tbody.innerHTML = '<tr><td colspan="13" class="empty-note">No batches yet. Add a new batch to get started.</td></tr>';
+        cards.innerHTML = '<div class="card empty-note">No batches yet. Add a new batch to get started.</div>';
+        return;
+      }
+      var rows = '', cardHtml = '';
+      state.batches.forEach(function (b) {
+        var s = schedule(b), id = esc(b.id);
+        var growthBtn = b.crop === 'Lettuce'
+          ? '<button type="button" class="btn btn-green btn-sm" data-action="open-growth" data-id="' + id + '">Growth</button>' : '';
+        var actions = growthBtn +
+          '<button type="button" class="btn btn-yellow btn-sm" data-action="edit-batch" data-id="' + id + '">Edit</button>' +
+          '<button type="button" class="btn btn-red btn-sm" data-action="delete-batch" data-id="' + id + '">Delete</button>';
+        rows += '<tr data-row="' + id + '"><td><strong>' + id + '</strong></td>' +
+          '<td><span class="swatch" style="background:' + b.color + '" role="img" aria-label="' + COLORS[b.color] + '"></span></td>' +
+          '<td>' + esc(b.crop) + '</td><td>' + esc(b.variety) + '</td>' +
+          '<td>' + fmt(s.das) + '</td><td>' + fmt(s.dat) + '</td>' +
+          s.weeks.map(function (w) { return '<td>' + fmt(w) + '</td>'; }).join('') +
+          '<td>' + fmt(s.harvest) + '</td><td>' + esc(b.remarks) + '</td>' +
+          '<td class="actions">' + actions + '</td></tr>';
+
+        function row(label, val) { return '<div class="card-row"><strong>' + label + '</strong><span>' + val + '</span></div>'; }
+        cardHtml += '<div class="card" data-row="' + id + '">' +
+          row('Batch ID', id) +
+          row('Color', '<span class="swatch" style="background:' + b.color + '" aria-hidden="true"></span> ' + COLORS[b.color]) +
+          row('Crop', esc(b.crop)) + row('Variety', esc(b.variety)) +
+          row('DAS (sown)', fmt(s.das)) + row('DAT (transplant)', fmt(s.dat)) +
+          s.weeks.map(function (w, i) { return row('Week ' + (i + 1), fmt(w)); }).join('') +
+          row('Harvest', fmt(s.harvest)) + row('Remarks', esc(b.remarks)) +
+          '<div class="card-actions">' + actions + '</div></div>';
+      });
+      tbody.innerHTML = rows;
+      cards.innerHTML = cardHtml;
+    }
+
+    function flashRow(id) {
+      document.querySelectorAll('[data-row="' + id + '"]').forEach(function (el) {
+        el.classList.add('flash');
+        setTimeout(function () { el.classList.remove('flash'); }, 2600);
+      });
+    }
+
+    function updateBatchPreview() {
+      var das = $('bDas').value, t = parseInt($('bDat').value, 10), h = parseInt($('bHarvest').value, 10);
+      if (!fromISO(das) || !(t >= 1) || !(h >= 7)) { $('bPreview').textContent = ''; return; }
+      var dat = addDaysISO(das, t);
+      $('bPreview').textContent = 'Transplant ' + fmt(dat) + '. Harvest ' + fmt(addDaysISO(dat, h)) + '.';
+    }
+
+    function openBatchDialog(mode, id, presetCrop) {
+      hideError('batchError');
+      var b = mode === 'edit' ? getBatch(id) : null;
+      ui.editing = { mode: mode, id: id };
+      $('batchTitle').textContent = mode === 'new' ? 'Add new batch' : 'Edit batch';
+      $('bId').textContent = mode === 'new' ? peekBatchId() : id;
+      $('bColor').value = b ? b.color : 'green';
+      $('bCrop').value = b ? b.crop : (presetCrop || 'Lettuce');
+      $('bVariety').value = b ? b.variety : '';
+      $('bDas').value = b ? b.das : todayISO();
+      $('bDat').value = b ? b.transplantDays : 10;
+      $('bHarvest').value = b ? b.harvestDays : 35;
+      $('bRemarks').value = b ? b.remarks : '';
+      updateBatchPreview();
+      $('batchDialog').showModal();
+    }
+
+    function submitBatch(e) {
+      e.preventDefault();
+      var variety = $('bVariety').value.trim(), das = $('bDas').value;
+      var t = Number($('bDat').value), h = Number($('bHarvest').value);
+      if (!variety) return showError('batchError', 'Enter a variety name.');
+      if (!fromISO(das)) return showError('batchError', 'Enter a valid sowing date.');
+      if (!Number.isInteger(t) || t < 1 || t > 60) return showError('batchError', 'Days to transplant must be 1 to 60.');
+      if (!Number.isInteger(h) || h < 7 || h > 120) return showError('batchError', 'Days to harvest must be 7 to 120.');
+
+      var data = {
+        color: $('bColor').value, crop: $('bCrop').value, variety: variety, das: das,
+        transplantDays: t, harvestDays: h, remarks: $('bRemarks').value.trim()
+      };
+      var id;
+      if (ui.editing.mode === 'new') {
+        id = takeBatchId();
+        data.id = id;
+        state.batches.unshift(data);
+      } else {
+        id = ui.editing.id;
+        Object.assign(getBatch(id), data);
+      }
+      save();
+      renderAll();
+      $('batchDialog').close();
+      flashRow(id);
+      toast('Batch ' + id + ' saved');
+    }
+
+    function deleteBatch(id) {
+      var n = state.logs.filter(function (l) { return l.batchId === id; }).length;
+      confirmAction('Delete batch ' + id + '?',
+        'This removes the batch' + (n ? ' and its ' + n + ' growth reading(s)' : '') + '. Cannot be undone.',
+        'Delete batch',
+        function () {
+          state.batches = state.batches.filter(function (b) { return b.id !== id; });
+          state.logs = state.logs.filter(function (l) { return l.batchId !== id; });
+          releaseBatchId(id);
+          save();
+          renderAll();
+        });
+    }
+
+    function clearAll() {
+      confirmAction('Clear all data?', 'This deletes all batches, logs, and new module records. Name & target ranges kept.', 'Clear all data', function () {
+        state.batches = []; state.logs = []; state.nextNum = 1; state.freeNums = [];
+        state.supplies = []; state.prodReports = []; state.ghLogs = []; state.prodInvs = []; state.harvests = []; state.costings = [];
+        save();
+        renderAll();
+      });
+    }
+
+    function exportBatchesCSV() {
+      if (!state.batches.length) { toast('No batch data to export.'); return; }
+      var head = ['Batch ID', 'Color', 'Crop', 'Variety', 'DAS (sown)', 'DAT (transplant)', 'Week 1', 'Week 2', 'Week 3', 'Week 4', 'Harvest', 'Remarks'];
+      var lines = [head.map(csvCell).join(',')];
+      state.batches.forEach(function (b) {
+        var s = schedule(b);
+        lines.push([b.id, COLORS[b.color], b.crop, b.variety, s.das, s.dat].concat(s.weeks, [s.harvest, b.remarks]).map(csvCell).join(','));
+      });
+      download('crop_monitoring.csv', lines.join('\r\n') + '\r\n', 'text/csv');
+    }
+
+    function lettuceBatches() { return state.batches.filter(function (b) { return b.crop === 'Lettuce'; }); }
+
+    function renderGrowth() {
+      var batches = lettuceBatches(), sel = $('growthBatch'), box = $('growthContent');
+      $('logBtn').disabled = !batches.length;
+      $('growthCsvBtn').disabled = !batches.length;
+      if (!batches.length) {
+        sel.innerHTML = '<option>No lettuce batches</option>';
+        sel.disabled = true;
+        box.innerHTML = '<div class="panel empty-note"><p>No lettuce batches yet.</p><p style="margin-top:0.75rem"><button type="button" class="btn btn-blue" data-action="new-lettuce">+ Add a lettuce batch</button></p></div>';
+        return;
+      }
+      sel.disabled = false;
+      if (!batches.some(function (b) { return b.id === ui.growthBatch; })) ui.growthBatch = batches[0].id;
+      sel.innerHTML = batches.map(function (b) {
+        return '<option value="' + esc(b.id) + '"' + (b.id === ui.growthBatch ? ' selected' : '') + '>' + esc(batchName(b)) + '</option>';
+      }).join('');
+
+      var b = getBatch(ui.growthBatch), logs = logsFor(b.id), today = todayISO();
+      var stage = stageOf(b, today), sch = schedule(b), left = daysBetween(today, sch.harvest);
+      var harvestText = left > 0 ? 'Harvest in ' + left + ' day' + (left === 1 ? '' : 's') + ' (' + fmtShort(sch.harvest) + ')'
+        : left === 0 ? 'Harvest today' : 'Harvest date passed ' + (-left) + ' day(s) ago';
+
+      var html = '<div class="panel"><div class="growth-head"><h3><span class="swatch" style="background:' + b.color + '" aria-hidden="true"></span> ' +
+        esc(batchName(b)) + '</h3><div><span class="badge ok">' + esc(stage.text) + '</span></div></div>' +
+        '<div class="stage-line muted">' +
+        (stage.day >= 0 ? '<span>Day <strong>' + stage.day + '</strong> post-sow</span>' : '') +
+        '<span>Sown ' + fmtShort(b.das) + '</span><span>Transplant ' + fmtShort(sch.dat) + '</span><span>' + harvestText + '</span></div></div>';
+
+      html += '<div class="readings" role="list">' + readingCards(logs) + '</div>';
+
+      var flags = attentionFor(b);
+      if (flags.length) {
+        html += '<div class="panel attention" style="margin-top:1.25rem"><h3>Needs attention</h3><ul class="task-list">' +
+          flags.map(function (f) { return '<li><span class="grow">' + esc(f) + '</span></li>'; }).join('') + '</ul></div>';
+      }
+
+      html += '<div class="panel" style="margin-top:1.25rem"><h3>Trend</h3><div class="chips" role="group" aria-label="Chart measurement">' +
+        METRIC_KEYS.map(function (k) {
+          return '<button type="button" class="chip" data-action="chart-metric" data-metric="' + k + '" aria-pressed="' + (k === ui.chartMetric) + '">' + esc(labelOf(k)) + '</button>';
+        }).join('') + '</div>' + chartSVG(b, logs, ui.chartMetric) + '</div>';
+
+      html += '<h3>History</h3>';
+      if (!logs.length) {
+        html += '<div class="panel empty-note">No readings yet. Tap \u201CLog a reading\u201D to add the first one.</div>';
+      } else {
+        html += logs.slice().reverse().map(function (l) { return logCard(b, l); }).join('');
+      }
+      box.innerHTML = html;
+    }
+
+    function readingCards(logs) {
+      return METRIC_KEYS.map(function (key) {
+        var label = esc(labelOf(key)), withVal = logs.filter(function (l) { return l[key] != null; });
+        if (!withVal.length) {
+          return '<div class="reading empty" role="listitem"><div class="reading-label">' + label + '</div><div class="reading-value">\u2014</div><div class="reading-foot">Not logged yet</div></div>';
+        }
+        var last = withVal[withVal.length - 1], prev = withVal[withVal.length - 2];
+        var st = statusOf(key, last[key]);
+        var badge = st ? '<span class="badge ' + (st === 'ok' ? 'ok' : 'warn') + '">' + (st === 'ok' ? 'In range' : st === 'low' ? 'Low' : 'High') + '</span>' : '';
+        var delta = '';
+        if (prev) {
+          var d = (key === 'ec' ? ecToDisplay(last[key] - prev[key]) : last[key] - prev[key]);
+          var txt = d.toFixed(decOf(key));
+          if (Number(txt) === 0) delta = 'no change';
+          else delta = (d > 0 ? '+' : '\u2212') + Math.abs(d).toFixed(decOf(key)) + ' since ' + fmtShort(prev.date);
+        }
+        return '<div class="reading" role="listitem"><div class="reading-label">' + label + '</div>' +
+          '<div class="reading-value">' + showVal(key, last[key]) + '<span>' + esc(unitOf(key)) + '</span></div>' +
+          '<div class="reading-foot"><span>' + fmtShort(last.date) + '</span>' + (delta ? '<span>' + delta + '</span>' : '') + badge + '</div>' +
+          (state.settings.targets[key] ? '<div class="reading-foot">Target ' + esc(targetText(key)) + '</div>' : '') + '</div>';
+      }).join('');
+    }
+
+    function logCard(b, l) {
+      var vals = METRIC_KEYS.filter(function (k) { return l[k] != null; }).map(function (k) {
+        var st = statusOf(k, l[k]);
+        var hotAlert = (k === 'temp' && l[k] >= 28) ? ' <span class="badge bad">&gt;28&deg;C Risk</span>' : '';
+        return '<div><dt>' + esc(labelOf(k)) + '</dt><dd>' + showVal(k, l[k]) + (unitOf(k) ? ' ' + esc(unitOf(k)) : '') +
+          (st && st !== 'ok' && !hotAlert ? ' <span class="badge warn">' + (st === 'low' ? 'Low' : 'High') + '</span>' : '') + hotAlert + '</dd></div>';
+      }).join('');
+      if (l.lightHours != null) {
+        vals += '<div><dt>Light Hours</dt><dd>' + l.lightHours + ' hrs</dd></div>';
+      }
+      if (l.topupLiters != null && l.topupLiters > 0) {
+        vals += '<div><dt>Water Refill</dt><dd>+' + l.topupLiters + ' L</dd></div>';
+      }
+      var id = esc(l.id);
+      var rootBad = l.rootHealth && l.rootHealth.indexOf('Brown') >= 0;
+      return '<article class="log"><div class="log-head"><strong>' + fmt(l.date) + '</strong><span class="muted">Day ' + daysBetween(b.das, l.date) + ' post-sow</span>' +
+        '<span class="badge ' + (l.condition === 'Healthy' ? 'ok' : 'bad') + '">' + esc(l.condition) + '</span>' +
+        (l.rootHealth ? '<span class="badge ' + (rootBad ? 'bad' : 'ok') + '">Roots: ' + esc(l.rootHealth) + '</span>' : '') +
+        (l.shade ? '<span class="badge" style="background:var(--surface-alt); color:var(--text);">' + esc(l.shade) + '</span>' : '') +
+        (l.topupLiters > 0 ? '<span class="badge ok">+' + l.topupLiters + ' L Refill</span>' : (l.topup ? '<span class="badge ok">Topped up</span>' : '')) + '</div>' +
+        (vals ? '<dl class="log-values">' + vals + '</dl>' : '') +
+        (l.notes ? '<p class="log-notes">' + esc(l.notes) + '</p>' : '') +
+        '<div class="card-actions"><button type="button" class="btn btn-yellow btn-sm" data-action="edit-log" data-id="' + id + '">Edit</button>' +
+        '<button type="button" class="btn btn-red btn-sm" data-action="delete-log" data-id="' + id + '">Delete</button></div></article>';
+    }
+
+    function chartSVG(b, logs, key) {
+      var conv = function (v) { return key === 'ec' ? ecToDisplay(v) : v; };
+      var pts = logs.filter(function (l) { return l[key] != null; }).map(function (l) {
+        return { x: daysBetween(b.das, l.date), y: conv(l[key]) };
+      });
+      if (!pts.length) return '<p class="empty-note">No ' + esc(labelOf(key).toLowerCase()) + ' readings yet.</p>';
+
+      var W = Math.max(300, Math.min(700, Math.round(($('growthContent').clientWidth || 640) - 42))), H = W < 500 ? 230 : 260, L = 44, R = 12, T = 20, B = 38;
+      var t = state.settings.targets[key];
+      var band = t ? { min: conv(t.min), max: conv(t.max) } : null;
+      var ys = pts.map(function (p) { return p.y; });
+      var lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+      if (band) { lo = Math.min(lo, band.min); hi = Math.max(hi, band.max); }
+      if (METRICS[key].zero) lo = 0;
+      if (hi === lo) hi = lo + 1;
+      var padY = (hi - lo) * 0.1;
+      hi += padY;
+      if (lo !== 0) lo -= padY;
+      var xs = pts.map(function (p) { return p.x; });
+      var xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs);
+      if (xlo === xhi) { xlo -= 1; xhi += 1; }
+      var sx = function (x) { return L + (x - xlo) / (xhi - xlo) * (W - L - R); };
+      var sy = function (y) { return T + (1 - (y - lo) / (hi - lo)) * (H - T - B); };
+      var range = hi - lo, tickDec = range >= 20 ? 0 : range >= 2 ? 1 : 2;
+      var valDec = decOf(key);
+
+      var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(labelOf(key)) + ' chart">';
+      if (band) {
+        svg += '<rect class="band" x="' + L + '" y="' + sy(band.max).toFixed(1) + '" width="' + (W - L - R) + '" height="' + Math.max(0, sy(band.min) - sy(band.max)).toFixed(1) + '"/>' +
+          '<text x="' + (L + 6) + '" y="' + (sy(band.max) + 13).toFixed(1) + '">Target range</text>';
+      }
+      for (var i = 0; i <= 4; i++) {
+        var v = lo + (hi - lo) * i / 4, y = sy(v);
+        svg += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '"/>' +
+          '<text x="' + (L - 6) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end">' + v.toFixed(tickDec) + '</text>';
+      }
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '"/>';
+      var step = Math.max(1, Math.ceil((xhi - xlo) / 7));
+      for (var x = Math.ceil(xlo); x <= xhi; x += step) {
+        svg += '<text x="' + sx(x).toFixed(1) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + x + '</text>';
+      }
+      svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 6) + '" text-anchor="middle">Days post-sow</text>';
+      svg += '<polyline class="line" points="' + pts.map(function (p) { return sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ') + '"/>';
+      pts.forEach(function (p) {
+        svg += '<circle class="dot" cx="' + sx(p.x).toFixed(1) + '" cy="' + sy(p.y).toFixed(1) + '" r="4"/>';
+        if (pts.length <= 10) svg += '<text class="val" x="' + sx(p.x).toFixed(1) + '" y="' + (sy(p.y) - 9).toFixed(1) + '" text-anchor="middle">' + p.y.toFixed(valDec) + '</text>';
+      });
+      return svg + '</svg>';
+    }
+
+    function updateLogHints() {
+      var unit = state.settings.unit;
+      $('logEcLabel').textContent = unit === 'ppm' ? 'TDS (ppm)' : 'EC (mS/cm)';
+      $('logPhHint').textContent = 'Target ' + targetText('ph');
+      $('logEcHint').textContent = 'Target ' + targetText('ec');
+      $('logTempHint').textContent = 'Target ' + targetText('temp');
+      var b = getBatch($('logBatch').value), d = $('logDate').value;
+      $('logDayHint').textContent = (b && fromISO(d)) ? 'Day ' + daysBetween(b.das, d) + ' post-sow' : '';
+    }
+
+    function openLogDialog(batchId, logId) {
+      var batches = lettuceBatches();
+      if (!batches.length) { toast('Add a lettuce batch first.'); return; }
+      hideError('logError');
+      var l = logId ? state.logs.find(function (x) { return x.id === logId; }) : null;
+      ui.logEditing = l ? l.id : null;
+      $('logTitle').textContent = l ? 'Edit reading' : 'Log a reading';
+      $('logBatch').innerHTML = batches.map(function (b) { return '<option value="' + esc(b.id) + '">' + esc(batchName(b)) + '</option>'; }).join('');
+      $('logBatch').value = l ? l.batchId : (batchId || ui.growthBatch || batches[0].id);
+      $('logDate').value = l ? l.date : todayISO();
+      $('logHeight').value = l && l.height != null ? l.height : '';
+      $('logLeaves').value = l && l.leaves != null ? l.leaves : '';
+      $('logRoot').value = l && l.root != null ? l.root : '';
+      $('logLevel').value = l && l.level != null ? l.level : '';
+      $('logPh').value = l && l.ph != null ? l.ph : '';
+      $('logEc').value = l && l.ec != null ? Number(ecToDisplay(l.ec).toFixed(state.settings.unit === 'ppm' ? 0 : 2)) : '';
+      $('logTemp').value = l && l.temp != null ? l.temp : '';
+      $('logCondition').value = l ? l.condition : 'Healthy';
+      $('logRootHealth').value = l && l.rootHealth ? l.rootHealth : 'White & Healthy';
+      $('logShade').value = l && l.shade ? l.shade : 'Shade Net Closed (50% Sun)';
+      $('logLightHours').value = l && l.lightHours != null ? l.lightHours : '';
+      $('logTopupLiters').value = l && l.topupLiters != null ? l.topupLiters : (l && l.topup ? '1' : '');
+      $('logNotes').value = l ? l.notes : '';
+      updateLogHints();
+      $('logDialog').showModal();
+    }
+
+    function readNum(id, label, min, max, whole) {
+      var raw = $(id).value.trim();
+      if (raw === '') return { v: null };
+      var v = Number(raw);
+      if (!isFinite(v) || v < min || v > max) return { err: label + ' must be between ' + min + ' and ' + max + '.' };
+      if (whole && !Number.isInteger(v)) return { err: label + ' must be a whole number.' };
+      return { v: v };
+    }
+
+    function submitLog(e) {
+      e.preventDefault();
+      var batchId = $('logBatch').value, b = getBatch(batchId), date = $('logDate').value;
+      if (!b) return showError('logError', 'Pick a batch.');
+      if (!fromISO(date)) return showError('logError', 'Enter a valid date.');
+      if (date > todayISO()) return showError('logError', 'Date cannot be in the future.');
+      if (date < b.das) return showError('logError', 'Date is before batch sowing (' + fmt(b.das) + ').');
+
+      var ppm = state.settings.unit === 'ppm';
+      var fields = {
+        height: readNum('logHeight', 'Height', 0, 100),
+        leaves: readNum('logLeaves', 'Leaf count', 0, 60, true),
+        root: readNum('logRoot', 'Root length', 0, 100),
+        level: readNum('logLevel', 'Water level', 0, 100),
+        ph: readNum('logPh', 'pH', 0, 14),
+        ec: readNum('logEc', ppm ? 'TDS' : 'EC', 0, ppm ? 5000 : 10),
+        temp: readNum('logTemp', 'Water temperature', 0, 50)
+      };
+      for (var k in fields) if (fields[k].err) return showError('logError', fields[k].err);
+
+      var lightHr = readNum('logLightHours', 'Light hours', 0, 24);
+      if (lightHr.err) return showError('logError', lightHr.err);
+      var topupL = readNum('logTopupLiters', 'Water top-up liters', 0, 5000);
+      if (topupL.err) return showError('logError', topupL.err);
+
+      var entry = {
+        batchId: batchId, date: date,
+        height: fields.height.v, leaves: fields.leaves.v, root: fields.root.v, level: fields.level.v,
+        ph: fields.ph.v, ec: fields.ec.v == null ? null : (ppm ? fields.ec.v / PPM_PER_EC : fields.ec.v), temp: fields.temp.v,
+        condition: $('logCondition').value,
+        rootHealth: $('logRootHealth').value,
+        shade: $('logShade').value,
+        lightHours: lightHr.v,
+        topupLiters: topupL.v,
+        topup: (topupL.v != null && topupL.v > 0),
+        notes: $('logNotes').value.trim()
+      };
+      if (!METRIC_KEYS.some(function (key) { return entry[key] != null; })) return showError('logError', 'Enter at least one measurement.');
+
+      if (ui.logEditing) {
+        var existing = state.logs.find(function (x) { return x.id === ui.logEditing; });
+        Object.assign(existing, entry);
+      } else {
+        entry.id = newId('L');
+        state.logs.push(entry);
+      }
+      ui.growthBatch = batchId;
+      save();
+      renderAll();
+      $('logDialog').close();
+      showTab('growth');
+      toast('Reading saved');
+    }
+
+    function deleteLog(id) {
+      confirmAction('Delete reading?', 'This cannot be undone.', 'Delete reading', function () {
+        state.logs = state.logs.filter(function (l) { return l.id !== id; });
+        save();
+        renderAll();
+      });
+    }
+
+    function exportGrowthCSV() {
+      if (!state.logs.length) { toast('No readings to export.'); return; }
+      var head = ['Date', 'Batch ID', 'Variety', 'Day post-sow', 'Height (cm)', 'Leaves', 'Root (cm)', 'Root Health', 'pH', 'EC (mS/cm)', 'TDS (ppm)', 'Water Temp (C)', 'Level (%)', 'Shade Net', 'Light Hours', 'Refill (L)', 'Condition', 'Notes'];
+      var lines = [head.map(csvCell).join(',')];
+      state.logs.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).forEach(function (l) {
+        var b = getBatch(l.batchId);
+        lines.push([l.date, l.batchId, b ? b.variety : '', b ? daysBetween(b.das, l.date) : '', l.height, l.leaves, l.root, l.rootHealth || '', l.ph,
+          l.ec == null ? '' : l.ec.toFixed(2), l.ec == null ? '' : Math.round(l.ec * PPM_PER_EC), l.temp, l.level, l.shade || '', l.lightHours == null ? '' : l.lightHours, l.topupLiters == null ? '' : l.topupLiters, l.condition, l.notes].map(csvCell).join(','));
+      });
+      download('lettuce_growth_log.csv', lines.join('\r\n') + '\r\n', 'text/csv');
+    }
+
+    var supplyEditingId = null;
+    function renderSupplies() {
+      var tbody = $('suppliesTableBody'), cards = $('suppliesCards');
+      if (!state.supplies.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No supply inventory items recorded yet.</td></tr>';
+        cards.innerHTML = '<div class="card empty-note">No supply items recorded yet.</div>';
+        return;
+      }
+      var rows = '', cardHtml = '';
+      state.supplies.forEach(function (s) {
+        var id = esc(s.id);
+        var actions = '<button type="button" class="btn btn-yellow btn-sm" data-action="edit-supply" data-id="' + id + '">Edit</button>' +
+                      '<button type="button" class="btn btn-red btn-sm" data-action="delete-supply" data-id="' + id + '">Delete</button>';
+        rows += '<tr><td>' + fmt(s.date) + '</td><td>' + esc(s.category) + '</td><td>' + esc(s.item) + '</td>' +
+                '<td>' + s.qty + '</td><td>' + esc(s.unit) + '</td><td>&#8369;' + Number(s.cost).toLocaleString() + '</td><td class="actions">' + actions + '</td></tr>';
+
+        cardHtml += '<div class="card">' +
+          '<div class="card-row"><strong>Date</strong><span>' + fmt(s.date) + '</span></div>' +
+          '<div class="card-row"><strong>Category</strong><span>' + esc(s.category) + '</span></div>' +
+          '<div class="card-row"><strong>Item</strong><span>' + esc(s.item) + '</span></div>' +
+          '<div class="card-row"><strong>Quantity</strong><span>' + s.qty + ' ' + esc(s.unit) + '</span></div>' +
+          '<div class="card-row"><strong>Est. Cost</strong><span>&#8369;' + Number(s.cost).toLocaleString() + '</span></div>' +
+          '<div class="card-actions">' + actions + '</div></div>';
+      });
+      tbody.innerHTML = rows;
+      cards.innerHTML = cardHtml;
+    }
+
+    function openSupplyDialog(mode, id) {
+      hideError('supplyError');
+      var item = mode === 'edit' ? state.supplies.find(function(s){return s.id === id;}) : null;
+      supplyEditingId = mode === 'edit' ? id : null;
+      $('supplyTitle').textContent = mode === 'new' ? 'Add Supply Item' : 'Edit Supply Item';
+      $('supDate').value = item ? item.date : todayISO();
+      $('supCategory').value = item ? item.category : 'Nutrient';
+      $('supItem').value = item ? item.item : '';
+      $('supQty').value = item ? item.qty : '';
+      $('supUnit').value = item ? item.unit : '';
+      $('supCost').value = item ? item.cost : '';
+      $('supplyDialog').showModal();
+    }
+
+    var prodReportEditingId = null;
+    function renderProdReports() {
+      var tbody = $('prodReportTableBody'), cards = $('prodReportCards');
+      if (!state.prodReports.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No production report entries yet.</td></tr>';
+        cards.innerHTML = '<div class="card empty-note">No production report entries yet.</div>';
+        return;
+      }
+      var rows = '', cardHtml = '';
+      state.prodReports.forEach(function (p) {
+        var id = esc(p.id);
+        var actions = '<button type="button" class="btn btn-yellow btn-sm" data-action="edit-prodreport" data-id="' + id + '">Edit</button>' +
+                      '<button type="button" class="btn btn-red btn-sm" data-action="delete-prodreport" data-id="' + id + '">Delete</button>';
+        rows += '<tr><td>' + fmt(p.date) + '</td><td>' + esc(p.crop) + '</td><td>' + esc(p.work) + '</td>' +
+                '<td>' + p.qty + '</td><td>' + esc(p.unit) + '</td><td>' + fmt(p.expDate) + '</td><td class="actions">' + actions + '</td></tr>';
+
+        cardHtml += '<div class="card">' +
+          '<div class="card-row"><strong>Date</strong><span>' + fmt(p.date) + '</span></div>' +
+          '<div class="card-row"><strong>Crop</strong><span>' + esc(p.crop) + '</span></div>' +
+          '<div class="card-row"><strong>Nature of Work</strong><span>' + esc(p.work) + '</span></div>' +
+          '<div class="card-row"><strong>Quantity</strong><span>' + p.qty + ' ' + esc(p.unit) + '</span></div>' +
+          '<div class="card-row"><strong>Exp. Harvest</strong><span>' + fmt(p.expDate) + '</span></div>' +
+          '<div class="card-actions">' + actions + '</div></div>';
+      });
+      tbody.innerHTML = rows;
+      cards.innerHTML = cardHtml;
+    }
+
+    function openProdReportDialog(mode, id) {
+      hideError('prodReportError');
+      var item = mode === 'edit' ? state.prodReports.find(function(p){return p.id === id;}) : null;
+      prodReportEditingId = mode === 'edit' ? id : null;
+      $('prodReportTitle').textContent = mode === 'new' ? 'Add Production Activity' : 'Edit Production Activity';
+      $('prDate').value = item ? item.date : todayISO();
+      $('prCrop').value = item ? item.crop : 'Lettuce';
+      $('prWork').value = item ? item.work : 'Sowing';
+      $('prQty').value = item ? item.qty : '';
+      $('prUnit').value = item ? item.unit : 'pcs';
+      $('prExpDate').value = item ? item.expDate : addDaysISO(todayISO(), 35);
+      $('prodReportDialog').showModal();
+    }
+
+    var ghLogEditingId = null;
+    function renderGhLogs() {
+      var tbody = $('ghLogTableBody'), cards = $('ghLogCards');
+      if (!state.ghLogs.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No greenhouse monitoring checklists recorded yet.</td></tr>';
+        cards.innerHTML = '<div class="card empty-note">No greenhouse logs recorded yet.</div>';
+        return;
+      }
+      var rows = '', cardHtml = '';
+      state.ghLogs.forEach(function (g) {
+        var id = esc(g.id);
+        var wTempStr = g.waterTemp != null ? ' / Water: ' + g.waterTemp + '&deg;C' + (g.waterTemp >= 28 ? ' <span class="badge bad">&#9888;</span>' : '') : '';
+        var shadeStr = esc(g.shade || 'Closed (Shaded)');
+        var actions = '<button type="button" class="btn btn-yellow btn-sm" data-action="edit-ghlog" data-id="' + id + '">Edit</button>' +
+                      '<button type="button" class="btn btn-red btn-sm" data-action="delete-ghlog" data-id="' + id + '">Delete</button>';
+        rows += '<tr><td>' + fmt(g.date) + '</td><td>' + esc(g.time) + '</td><td>Air: ' + g.temp + '&deg;C' + wTempStr + '</td>' +
+                '<td>' + g.hum + '%</td><td>pH ' + g.ph + ' / ' + g.tds + ' ppm</td><td>' + shadeStr + '</td><td class="actions">' + actions + '</td></tr>';
+
+        cardHtml += '<div class="card">' +
+          '<div class="card-row"><strong>Date / Time</strong><span>' + fmt(g.date) + ' (' + esc(g.time) + ')</span></div>' +
+          '<div class="card-row"><strong>Air / Water Temp</strong><span>' + g.temp + '&deg;C' + wTempStr + '</span></div>' +
+          '<div class="card-row"><strong>Humidity / Shade</strong><span>' + g.hum + '% &bull; ' + shadeStr + '</span></div>' +
+          '<div class="card-row"><strong>pH / TDS</strong><span>' + g.ph + ' / ' + g.tds + ' ppm</span></div>' +
+          '<div class="card-actions">' + actions + '</div></div>';
+      });
+      tbody.innerHTML = rows;
+      cards.innerHTML = cardHtml;
+    }
+
+    function openGhLogDialog(mode, id) {
+      hideError('ghLogError');
+      var item = mode === 'edit' ? state.ghLogs.find(function(g){return g.id === id;}) : null;
+      ghLogEditingId = mode === 'edit' ? id : null;
+      $('ghLogTitle').textContent = mode === 'new' ? 'Add Environmental Log' : 'Edit Environmental Log';
+      $('ghDate').value = item ? item.date : todayISO();
+      $('ghTime').value = item ? item.time : '2:00 PM';
+      $('ghTemp').value = item ? item.temp : '30.5';
+      $('ghHum').value = item ? item.hum : '65';
+      $('ghPh').value = item ? item.ph : '6.0';
+      $('ghTds').value = item ? item.tds : '720';
+      $('ghWaterTemp').value = item && item.waterTemp != null ? item.waterTemp : '25.5';
+      $('ghShade').value = item && item.shade ? item.shade : 'Closed (Shaded)';
+      $('ghLogDialog').showModal();
+    }
+
+    var prodInvEditingId = null;
+    function renderProdInvs() {
+      var tbody = $('prodInvTableBody'), cards = $('prodInvCards');
+      if (!state.prodInvs.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No facility inventory &amp; plant health records yet.</td></tr>';
+        cards.innerHTML = '<div class="card empty-note">No facility inventory records yet.</div>';
+        return;
+      }
+      var rows = '', cardHtml = '';
+      state.prodInvs.forEach(function (p) {
+        var id = esc(p.id);
+        var healthy = Math.max(0, p.holes - p.sick);
+        var actions = '<button type="button" class="btn btn-yellow btn-sm" data-action="edit-prodinv" data-id="' + id + '">Edit</button>' +
+                      '<button type="button" class="btn btn-red btn-sm" data-action="delete-prodinv" data-id="' + id + '">Delete</button>';
+        rows += '<tr><td><strong>' + esc(p.gh) + '</strong></td><td>' + p.holes + '</td><td>' + p.sick + '</td>' +
+                '<td>' + esc(p.cause) + '</td><td><span class="badge ok">' + healthy + ' plants</span></td><td class="actions">' + actions + '</td></tr>';
+
+        cardHtml += '<div class="card">' +
+          '<div class="card-row"><strong>Greenhouse / Section</strong><span>' + esc(p.gh) + '</span></div>' +
+          '<div class="card-row"><strong>Total Holes</strong><span>' + p.holes + '</span></div>' +
+          '<div class="card-row"><strong>Sick Plants</strong><span>' + p.sick + ' (' + esc(p.cause) + ')</span></div>' +
+          '<div class="card-row"><strong>Healthy Plants</strong><span><span class="badge ok">' + healthy + '</span></span></div>' +
+          '<div class="card-actions">' + actions + '</div></div>';
+      });
+      tbody.innerHTML = rows;
+      cards.innerHTML = cardHtml;
+    }
+
+    function openProdInvDialog(mode, id) {
+      hideError('prodInvError');
+      var item = mode === 'edit' ? state.prodInvs.find(function(p){return p.id === id;}) : null;
+      prodInvEditingId = mode === 'edit' ? id : null;
+      $('prodInvTitle').textContent = mode === 'new' ? 'Add Greenhouse Record' : 'Edit Greenhouse Record';
+      $('piGh').value = item ? item.gh : 'GH-01';
+      $('piHoles').value = item ? item.holes : '500';
+      $('piSick').value = item ? item.sick : '5';
+      $('piCause').value = item ? item.cause : 'Pests';
+      $('prodInvDialog').showModal();
+    }
+
+    var harvestEditingId = null;
+    function renderHarvests() {
+      var tbody = $('harvestTableBody'), cards = $('harvestCards');
+      if (!state.harvests.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No harvest inventory records yet.</td></tr>';
+        cards.innerHTML = '<div class="card empty-note">No harvest records yet.</div>';
+        return;
+      }
+      var rows = '', cardHtml = '';
+      state.harvests.forEach(function (h) {
+        var id = esc(h.id);
+        var avgWt = h.plants > 0 ? (h.weight / h.plants).toFixed(2) : '0';
+        var actions = '<button type="button" class="btn btn-yellow btn-sm" data-action="edit-harvest" data-id="' + id + '">Edit</button>' +
+                      '<button type="button" class="btn btn-red btn-sm" data-action="delete-harvest" data-id="' + id + '">Delete</button>';
+        rows += '<tr><td>' + fmt(h.date) + '</td><td>' + esc(h.crop) + '</td><td>' + esc(h.gh) + '</td>' +
+                '<td>' + h.plants + '</td><td>' + h.weight + ' kg <span class="muted small">(' + avgWt + 'kg/pl)</span></td><td class="actions">' + actions + '</td></tr>';
+
+        cardHtml += '<div class="card">' +
+          '<div class="card-row"><strong>Date</strong><span>' + fmt(h.date) + '</span></div>' +
+          '<div class="card-row"><strong>Crop / GH</strong><span>' + esc(h.crop) + ' (' + esc(h.gh) + ')</span></div>' +
+          '<div class="card-row"><strong>Plants / Weight</strong><span>' + h.plants + ' plants | ' + h.weight + ' kg</span></div>' +
+          '<div class="card-actions">' + actions + '</div></div>';
+      });
+      tbody.innerHTML = rows;
+      cards.innerHTML = cardHtml;
+    }
+
+    function openHarvestDialog(mode, id) {
+      hideError('harvestError');
+      var item = mode === 'edit' ? state.harvests.find(function(h){return h.id === id;}) : null;
+      harvestEditingId = mode === 'edit' ? id : null;
+      $('harvestTitle').textContent = mode === 'new' ? 'Add Harvest Record' : 'Edit Harvest Record';
+      $('hvDate').value = item ? item.date : todayISO();
+      $('hvCrop').value = item ? item.crop : 'Lettuce';
+      $('hvGh').value = item ? item.gh : 'GH-01';
+      $('hvPlants').value = item ? item.plants : '200';
+      $('hvWeight').value = item ? item.weight : '25';
+      $('harvestDialog').showModal();
+    }
+
+    var costingEditingId = null;
+    function renderCostings() {
+      var tbody = $('costingTableBody'), cards = $('costingCards');
+      if (!state.costings.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No costing &amp; profit analysis entries yet.</td></tr>';
+        cards.innerHTML = '<div class="card empty-note">No costing records yet.</div>';
+        return;
+      }
+      var rows = '', cardHtml = '';
+      state.costings.forEach(function (c) {
+        var id = esc(c.id);
+        var profit = c.sales - c.cost;
+        var profitPct = c.cost > 0 ? Math.round((profit / c.cost) * 100) : 0;
+        var profitClass = profit >= 0 ? 'ok' : 'bad';
+        var actions = '<button type="button" class="btn btn-yellow btn-sm" data-action="edit-costing" data-id="' + id + '">Edit</button>' +
+                      '<button type="button" class="btn btn-red btn-sm" data-action="delete-costing" data-id="' + id + '">Delete</button>';
+        rows += '<tr><td><strong>' + esc(c.crop) + '</strong></td><td>&#8369;' + Number(c.cost).toLocaleString() + '</td>' +
+                '<td>&#8369;' + Number(c.sales).toLocaleString() + '</td><td><span class="badge ' + profitClass + '">&#8369;' + Number(profit).toLocaleString() + '</span></td>' +
+                '<td>' + profitPct + '%</td><td class="actions">' + actions + '</td></tr>';
+
+        cardHtml += '<div class="card">' +
+          '<div class="card-row"><strong>Crop / Item</strong><span>' + esc(c.crop) + '</span></div>' +
+          '<div class="card-row"><strong>Total Cost / Sales</strong><span>&#8369;' + Number(c.cost).toLocaleString() + ' / &#8369;' + Number(c.sales).toLocaleString() + '</span></div>' +
+          '<div class="card-row"><strong>Net Profit</strong><span><span class="badge ' + profitClass + '">&#8369;' + Number(profit).toLocaleString() + ' (' + profitPct + '%)</span></span></div>' +
+          '<div class="card-actions">' + actions + '</div></div>';
+      });
+      tbody.innerHTML = rows;
+      cards.innerHTML = cardHtml;
+    }
+
+    function openCostingDialog(mode, id) {
+      hideError('costingError');
+      var item = mode === 'edit' ? state.costings.find(function(c){return c.id === id;}) : null;
+      costingEditingId = mode === 'edit' ? id : null;
+      $('costingTitle').textContent = mode === 'new' ? 'Add Costing Analysis' : 'Edit Costing Analysis';
+      $('coCrop').value = item ? item.crop : 'Lettuce';
+      $('coCost').value = item ? item.cost : '1500';
+      $('coSales').value = item ? item.sales : '3000';
+      $('costingDialog').showModal();
+    }
+
+    function renderParams() {
+      var s = state.settings, ppm = s.unit === 'ppm';
+      ui.paramUnit = s.unit;
+      $('pUnit').value = s.unit;
+      $('pEcLabel').textContent = ppm ? 'TDS (ppm)' : 'EC (mS/cm)';
+      $('pPhMin').value = s.targets.ph.min; $('pPhMax').value = s.targets.ph.max;
+      $('pEcMin').value = Number(ecToDisplay(s.targets.ec.min).toFixed(ppm ? 0 : 2));
+      $('pEcMax').value = Number(ecToDisplay(s.targets.ec.max).toFixed(ppm ? 0 : 2));
+      $('pTempMin').value = s.targets.temp.min; $('pTempMax').value = s.targets.temp.max;
+    }
+
+    function onParamUnitChange() {
+      var from = ui.paramUnit, to = $('pUnit').value;
+      if (from === to) return;
+      ['pEcMin', 'pEcMax'].forEach(function (id) {
+        var v = Number($(id).value);
+        if ($(id).value.trim() === '' || !isFinite(v)) return;
+        $(id).value = to === 'ppm' ? Math.round(v * PPM_PER_EC) : Number((v / PPM_PER_EC).toFixed(2));
+      });
+      $('pEcLabel').textContent = to === 'ppm' ? 'TDS (ppm)' : 'EC (mS/cm)';
+      ui.paramUnit = to;
+    }
+
+    function submitParams(e) {
+      e.preventDefault();
+      var ppm = $('pUnit').value === 'ppm';
+      var v = {
+        phMin: Number($('pPhMin').value), phMax: Number($('pPhMax').value),
+        ecMin: Number($('pEcMin').value), ecMax: Number($('pEcMax').value),
+        tMin: Number($('pTempMin').value), tMax: Number($('pTempMax').value)
+      };
+      var blank = ['pPhMin', 'pPhMax', 'pEcMin', 'pEcMax', 'pTempMin', 'pTempMax'].some(function (id) { return $(id).value.trim() === ''; });
+      if (blank || Object.keys(v).some(function (k) { return !isFinite(v[k]); })) return showError('paramsError', 'Fill in every minimum and maximum.');
+      if (v.phMin < 0 || v.phMax > 14 || v.phMin >= v.phMax) return showError('paramsError', 'pH minimum must be below maximum (0-14).');
+      var ecCap = ppm ? 5000 : 10;
+      if (v.ecMin < 0 || v.ecMax > ecCap || v.ecMin >= v.ecMax) return showError('paramsError', 'Nutrient min must be below max.');
+      if (v.tMin < 0 || v.tMax > 50 || v.tMin >= v.tMax) return showError('paramsError', 'Temp min must be below max.');
+      hideError('paramsError');
+      state.settings.unit = ppm ? 'ppm' : 'ec';
+      state.settings.targets = {
+        ph: { min: v.phMin, max: v.phMax },
+        ec: { min: ppm ? v.ecMin / PPM_PER_EC : v.ecMin, max: ppm ? v.ecMax / PPM_PER_EC : v.ecMax },
+        temp: { min: v.tMin, max: v.tMax }
+      };
+      save();
+      renderAll();
+      toast('Ranges saved');
+    }
+
+    function renderAccounts() { 
+      if ($('nameInput')) $('nameInput').value = state.settings.name; 
+      if ($('gasUrlInput')) $('gasUrlInput').value = FIXED_GAS_URL;
+    }
+
+    function importBackup(file) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var raw = JSON.parse(reader.result);
+          if (!raw || !Array.isArray(raw.batches)) throw new Error('Not a valid backup');
+          var next = normalize(raw);
+          confirmAction('Restore this backup?',
+            'This replaces app data with the backup (' + next.batches.length + ' batches, plus all modules).',
+            'Restore',
+            function () { state = next; save(); renderAll(); toast('Backup restored successfully'); });
+        } catch (err) {
+          toast('That file is not a valid backup.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function renderAll() {
+      renderHome();
+      renderMonitoring();
+      renderGrowth();
+      renderSupplies();
+      renderProdReports();
+      renderGhLogs();
+      renderProdInvs();
+      renderHarvests();
+      renderCostings();
+      renderParams();
+      renderAccounts();
+      calculateNutrients();
+    }
+
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-action],[data-tab]');
+      if (!el) return;
+      if (el.dataset.tab) { showTab(el.dataset.tab); closeMenu(); return; }
+      var id = el.dataset.id;
+      switch (el.dataset.action) {
+        case 'pick-date': ui.homeDate = el.dataset.date; renderHome(); break;
+        case 'edit-batch': openBatchDialog('edit', id); break;
+        case 'delete-batch': deleteBatch(id); break;
+        case 'log-batch':
+          if ($('remindersDialog') && $('remindersDialog').open) $('remindersDialog').close();
+          if ($('scheduleDialog') && $('scheduleDialog').open) $('scheduleDialog').close();
+          openLogDialog(id);
+          break;
+        case 'open-growth':
+          if ($('remindersDialog') && $('remindersDialog').open) $('remindersDialog').close();
+          if ($('scheduleDialog') && $('scheduleDialog').open) $('scheduleDialog').close();
+          ui.growthBatch = id;
+          renderGrowth();
+          showTab('growth');
+          break;
+        case 'new-lettuce': openBatchDialog('new', null, 'Lettuce'); break;
+        case 'edit-log': openLogDialog(null, id); break;
+        case 'delete-log': deleteLog(id); break;
+        case 'chart-metric': ui.chartMetric = el.dataset.metric; renderGrowth(); break;
+
+        case 'edit-supply': openSupplyDialog('edit', id); break;
+        case 'delete-supply':
+          confirmAction('Delete supply item?', 'Cannot be undone.', 'Delete', function(){
+            state.supplies = state.supplies.filter(function(s){return s.id !== id;});
+            save(); renderSupplies(); toast('Supply deleted');
+          }); break;
+
+        case 'edit-prodreport': openProdReportDialog('edit', id); break;
+        case 'delete-prodreport':
+          confirmAction('Delete production report?', 'Cannot be undone.', 'Delete', function(){
+            state.prodReports = state.prodReports.filter(function(p){return p.id !== id;});
+            save(); renderProdReports(); toast('Report deleted');
+          }); break;
+
+        case 'edit-ghlog': openGhLogDialog('edit', id); break;
+        case 'delete-ghlog':
+          confirmAction('Delete greenhouse log?', 'Cannot be undone.', 'Delete', function(){
+            state.ghLogs = state.ghLogs.filter(function(g){return g.id !== id;});
+            save(); renderGhLogs(); toast('Log deleted');
+          }); break;
+
+        case 'edit-prodinv': openProdInvDialog('edit', id); break;
+        case 'delete-prodinv':
+          confirmAction('Delete facility record?', 'Cannot be undone.', 'Delete', function(){
+            state.prodInvs = state.prodInvs.filter(function(p){return p.id !== id;});
+            save(); renderProdInvs(); toast('Record deleted');
+          }); break;
+
+        case 'edit-harvest': openHarvestDialog('edit', id); break;
+        case 'delete-harvest':
+          confirmAction('Delete harvest record?', 'Cannot be undone.', 'Delete', function(){
+            state.harvests = state.harvests.filter(function(h){return h.id !== id;});
+            save(); renderHarvests(); toast('Harvest record deleted');
+          }); break;
+
+        case 'edit-costing': openCostingDialog('edit', id); break;
+        case 'delete-costing':
+          confirmAction('Delete costing analysis?', 'Cannot be undone.', 'Delete', function(){
+            state.costings = state.costings.filter(function(c){return c.id !== id;});
+            save(); renderCostings(); toast('Costing deleted');
+          }); break;
+      }
+    });
+
+    $('menuBtn').addEventListener('click', function () {
+      var open = $('mainNav').classList.toggle('show');
+      this.setAttribute('aria-expanded', String(open));
+    });
+
+    $('addRowBtn').addEventListener('click', function () { openBatchDialog('new'); });
+    $('exportBtn').addEventListener('click', exportBatchesCSV);
+    $('clearDataBtn').addEventListener('click', clearAll);
+    $('logBtn').addEventListener('click', function () { openLogDialog(ui.growthBatch); });
+    $('growthCsvBtn').addEventListener('click', exportGrowthCSV);
+    $('growthBatch').addEventListener('change', function () { ui.growthBatch = this.value; renderGrowth(); });
+
+    $('batchForm').addEventListener('submit', submitBatch);
+    $('batchCancel').addEventListener('click', function () { $('batchDialog').close(); });
+    ['bDas', 'bDat', 'bHarvest'].forEach(function (id) { $(id).addEventListener('input', updateBatchPreview); });
+
+    $('logForm').addEventListener('submit', submitLog);
+    $('logCancel').addEventListener('click', function () { $('logDialog').close(); });
+    ['logBatch', 'logDate'].forEach(function (id) { $(id).addEventListener('input', updateLogHints); });
+
+    $('supplyForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = {
+        id: supplyEditingId || newId('SUP'),
+        date: $('supDate').value,
+        category: $('supCategory').value,
+        item: $('supItem').value.trim(),
+        qty: Number($('supQty').value),
+        unit: $('supUnit').value.trim(),
+        cost: Number($('supCost').value)
+      };
+      if (!data.item || !data.unit || isNaN(data.qty) || isNaN(data.cost)) return showError('supplyError', 'Complete required fields.');
+      if (supplyEditingId) {
+        var idx = state.supplies.findIndex(function(s){return s.id === supplyEditingId;});
+        if (idx >= 0) state.supplies[idx] = data;
+      } else { state.supplies.unshift(data); }
+      save(); renderSupplies(); $('supplyDialog').close(); toast('Supply item saved');
+    });
+    $('supplyCancel').addEventListener('click', function(){ $('supplyDialog').close(); });
+    $('addSupplyBtn').addEventListener('click', function(){ openSupplyDialog('new'); });
+
+    $('prodReportForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var data = {
+        id: prodReportEditingId || newId('PR'),
+        date: $('prDate').value,
+        crop: $('prCrop').value.trim(),
+        work: $('prWork').value,
+        qty: Number($('prQty').value),
+        unit: $('prUnit').value.trim(),
+        expDate: $('prExpDate').value
+      };
+      if (!data.crop || isNaN(data.qty) || !fromISO(data.expDate)) return showError('prodReportError', 'Fill in required fields accurately.');
+      if (prodReportEditingId) {
+        var idx = state.prodReports.findIndex(function(p){return p.id === prodReportEditingId;});
+        if (idx >= 0) state.prodReports[idx] = data;
+      } else { state.prodReports.unshift(data); }
+      save(); renderProdReports(); $('prodReportDialog').close(); toast('Production report saved');
+    });
+    $('prodReportCancel').addEventListener('click', function(){ $('prodReportDialog').close(); });
+    $('addProdReportBtn').addEventListener('click', function(){ openProdReportDialog('new'); });
+
+    $('ghLogForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var data = {
+        id: ghLogEditingId || newId('GH'),
+        date: $('ghDate').value,
+        time: $('ghTime').value,
+        temp: Number($('ghTemp').value),
+        waterTemp: numOrNull($('ghWaterTemp').value),
+        hum: Number($('ghHum').value),
+        ph: Number($('ghPh').value),
+        tds: Number($('ghTds').value),
+        shade: $('ghShade').value
+      };
+      if (isNaN(data.temp) || isNaN(data.hum) || isNaN(data.ph) || isNaN(data.tds)) return showError('ghLogError', 'Enter valid environmental numbers.');
+      if (ghLogEditingId) {
+        var idx = state.ghLogs.findIndex(function(g){return g.id === ghLogEditingId;});
+        if (idx >= 0) state.ghLogs[idx] = data;
+      } else { state.ghLogs.unshift(data); }
+      save(); renderGhLogs(); $('ghLogDialog').close(); toast('Greenhouse log saved');
+    });
+    $('ghLogCancel').addEventListener('click', function(){ $('ghLogDialog').close(); });
+    $('addGhLogBtn').addEventListener('click', function(){ openGhLogDialog('new'); });
+
+    $('prodInvForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var data = {
+        id: prodInvEditingId || newId('PI'),
+        gh: $('piGh').value.trim(),
+        holes: parseInt($('piHoles').value, 10),
+        sick: parseInt($('piSick').value, 10),
+        cause: $('piCause').value.trim()
+      };
+      if (!data.gh || isNaN(data.holes) || isNaN(data.sick) || data.sick > data.holes) return showError('prodInvError', 'Sick plants cannot exceed total holes.');
+      if (prodInvEditingId) {
+        var idx = state.prodInvs.findIndex(function(p){return p.id === prodInvEditingId;});
+        if (idx >= 0) state.prodInvs[idx] = data;
+      } else { state.prodInvs.unshift(data); }
+      save(); renderProdInvs(); $('prodInvDialog').close(); toast('Record saved');
+    });
+    $('prodInvCancel').addEventListener('click', function(){ $('prodInvDialog').close(); });
+    $('addProdInvBtn').addEventListener('click', function(){ openProdInvDialog('new'); });
+
+    $('harvestForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var data = {
+        id: harvestEditingId || newId('HV'),
+        date: $('hvDate').value,
+        crop: $('hvCrop').value.trim(),
+        gh: $('hvGh').value.trim(),
+        plants: parseInt($('hvPlants').value, 10),
+        weight: Number($('hvWeight').value)
+      };
+      if (!data.crop || isNaN(data.plants) || isNaN(data.weight)) return showError('harvestError', 'Fill harvest fields correctly.');
+      if (harvestEditingId) {
+        var idx = state.harvests.findIndex(function(h){return h.id === harvestEditingId;});
+        if (idx >= 0) state.harvests[idx] = data;
+      } else { state.harvests.unshift(data); }
+      save(); renderHarvests(); renderHome(); $('harvestDialog').close(); toast('Harvest inventory saved');
+    });
+    $('harvestCancel').addEventListener('click', function(){ $('harvestDialog').close(); });
+    $('addHarvestBtn').addEventListener('click', function(){ openHarvestDialog('new'); });
+
+    $('costingForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var data = {
+        id: costingEditingId || newId('CO'),
+        crop: $('coCrop').value.trim(),
+        cost: Number($('coCost').value),
+        sales: Number($('coSales').value)
+      };
+      if (!data.crop || isNaN(data.cost) || isNaN(data.sales)) return showError('costingError', 'Enter valid cost and sales amounts.');
+      if (costingEditingId) {
+        var idx = state.costings.findIndex(function(c){return c.id === costingEditingId;});
+        if (idx >= 0) state.costings[idx] = data;
+      } else { state.costings.unshift(data); }
+      save(); renderCostings(); $('costingDialog').close(); toast('Costing analysis saved');
+    });
+    $('costingCancel').addEventListener('click', function(){ $('costingDialog').close(); });
+    $('addCostingBtn').addEventListener('click', function(){ openCostingDialog('new'); });
+
+    $('confirmOk').addEventListener('click', function () {
+      var fn = pendingConfirm;
+      pendingConfirm = null;
+      $('confirmDialog').close();
+      if (fn) fn();
+    });
+    $('confirmCancel').addEventListener('click', function () { $('confirmDialog').close(); });
+    $('confirmDialog').addEventListener('close', function () { pendingConfirm = null; });
+
+    $('pUnit').addEventListener('change', onParamUnitChange);
+    $('paramsForm').addEventListener('submit', submitParams);
+    $('paramsReset').addEventListener('click', function () {
+      state.settings.targets = clone(DEFAULT_SETTINGS.targets);
+      hideError('paramsError');
+      save();
+      renderAll();
+      toast('Ranges reset');
+    });
+
+    $('nameForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var n = $('nameInput').value.trim();
+      if (!n) { toast('Enter a name.'); return; }
+      state.settings.name = n.slice(0, 40);
+      save();
+      renderAll();
+      toast('Name saved');
+    });
+
+    if ($('manualSyncBtn')) $('manualSyncBtn').addEventListener('click', function() { pushToGoogleDrive(true); });
+    if ($('manualPullBtn')) $('manualPullBtn').addEventListener('click', function() { pullFromGoogleDrive(true); });
+    if ($('manualSyncBtnAccount')) $('manualSyncBtnAccount').addEventListener('click', function() { pushToGoogleDrive(true); });
+    if ($('manualPullBtnAccount')) $('manualPullBtnAccount').addEventListener('click', function() { pullFromGoogleDrive(true); });
+
+    if ($('openRemindersTileBtn')) {
+      $('openRemindersTileBtn').addEventListener('click', function() { $('remindersDialog').showModal(); });
+    }
+    if ($('closeRemindersBtn')) {
+      $('closeRemindersBtn').addEventListener('click', function() { $('remindersDialog').close(); });
+    }
+    if ($('openScheduleTileBtn')) {
+      $('openScheduleTileBtn').addEventListener('click', function() { $('scheduleDialog').showModal(); });
+    }
+    if ($('closeScheduleBtn')) {
+      $('closeScheduleBtn').addEventListener('click', function() { $('scheduleDialog').close(); });
+    }
+
+    $('backupBtn').addEventListener('click', function () {
+      download('deedee-greenhouse-backup-' + todayISO() + '.json', JSON.stringify(state, null, 2), 'application/json');
+    });
+    $('restoreBtn').addEventListener('click', function () { $('restoreFile').click(); });
+    $('restoreFile').addEventListener('change', function () {
+      if (this.files[0]) importBackup(this.files[0]);
+      this.value = '';
+    });
+
+    $('exportSuppliesCsv').addEventListener('click', function(){
+      if (!state.supplies.length) { toast('No supplies to export.'); return; }
+      var lines = [['Date', 'Category', 'Item', 'Quantity', 'Unit', 'Est. Cost'].map(csvCell).join(',')];
+      state.supplies.forEach(function(s){ lines.push([s.date, s.category, s.item, s.qty, s.unit, s.cost].map(csvCell).join(',')); });
+      download('supplies_inventory.csv', lines.join('\r\n'), 'text/csv');
+    });
+
+    $('exportProdReportCsv').addEventListener('click', function(){
+      if (!state.prodReports.length) { toast('No production reports to export.'); return; }
+      var lines = [['Date', 'Crop', 'Work', 'Quantity', 'Unit', 'Exp. Harvest'].map(csvCell).join(',')];
+      state.prodReports.forEach(function(p){ lines.push([p.date, p.crop, p.work, p.qty, p.unit, p.expDate].map(csvCell).join(',')); });
+      download('production_report.csv', lines.join('\r\n'), 'text/csv');
+    });
+
+    $('exportGhLogCsv').addEventListener('click', function(){
+      if (!state.ghLogs.length) { toast('No greenhouse logs to export.'); return; }
+      var lines = [['Date', 'Time', 'Air Temp (C)', 'Water Temp (C)', 'Humidity (%)', 'pH', 'TDS (ppm)', 'Shade Net'].map(csvCell).join(',')];
+      state.ghLogs.forEach(function(g){ lines.push([g.date, g.time, g.temp, g.waterTemp == null ? '' : g.waterTemp, g.hum, g.ph, g.tds, g.shade || ''].map(csvCell).join(',')); });
+      download('greenhouse_monitoring.csv', lines.join('\r\n'), 'text/csv');
+    });
+
+    $('exportProdInvCsv').addEventListener('click', function(){
+      if (!state.prodInvs.length) { toast('No facility inventory to export.'); return; }
+      var lines = [['Greenhouse', 'Total Holes', 'Sick Plants', 'Cause', 'Healthy Plants'].map(csvCell).join(',')];
+      state.prodInvs.forEach(function(p){ lines.push([p.gh, p.holes, p.sick, p.cause, Math.max(0, p.holes - p.sick)].map(csvCell).join(',')); });
+      download('facility_inventory.csv', lines.join('\r\n'), 'text/csv');
+    });
+
+    $('exportHarvestCsv').addEventListener('click', function(){
+      if (!state.harvests.length) { toast('No harvest records to export.'); return; }
+      var lines = [['Date', 'Crop', 'Greenhouse', 'Plants', 'Weight (kg)'].map(csvCell).join(',')];
+      state.harvests.forEach(function(h){ lines.push([h.date, h.crop, h.gh, h.plants, h.weight].map(csvCell).join(',')); });
+      download('harvest_inventory.csv', lines.join('\r\n'), 'text/csv');
+    });
+
+    $('exportCostingCsv').addEventListener('click', function(){
+      if (!state.costings.length) { toast('No costing records to export.'); return; }
+      var lines = [['Crop', 'Total Cost', 'Total Sales', 'Profit', 'Profit %'].map(csvCell).join(',')];
+      state.costings.forEach(function(c){
+        var p = c.sales - c.cost;
+        var pct = c.cost > 0 ? Math.round((p/c.cost)*100) : 0;
+        lines.push([c.crop, c.cost, c.sales, p, pct + '%'].map(csvCell).join(','));
+      });
+      download('costing_profit.csv', lines.join('\r\n'), 'text/csv');
+    });
+
+    if ($('testSoundBtn')) {
+      $('testSoundBtn').addEventListener('click', function() { playNotificationSound(true); });
+    }
+    document.addEventListener('pointerdown', function unlockAudio() {
+      var today = todayISO();
+      var due = state.batches.some(function(b) {
+        return isActive(b, today) && schedule(b).weeks.some(function(wDate) { return daysBetween(today, wDate) === 0; });
+      });
+      if (due && !ui.foliarSoundPlayedOnceAfterClick) {
+        ui.foliarSoundPlayedOnceAfterClick = true;
+        playNotificationSound(false);
+      }
+      document.removeEventListener('pointerdown', unlockAudio);
+    }, { once: true });
+
+    $('calcVolume').addEventListener('input', calculateNutrients);
+    $('calcPreset').addEventListener('change', calculateNutrients);
+    $('diagSymptom').addEventListener('change', handleDiagnostics);
+    if ($('locationFilter')) {
+      $('locationFilter').addEventListener('change', function() {
+        state.settings.location = this.value;
+        save();
+        renderHome();
+      });
+    }
+
+    var resizeTimer = null;
+    window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderGrowth, 250); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) renderAll(); });
+
+    $('bColor').innerHTML = Object.keys(COLORS).map(function (k) { return '<option value="' + k + '">' + COLORS[k] + '</option>'; }).join('');
+    $('bCrop').innerHTML = CROPS.map(function (c) { return '<option>' + c + '</option>'; }).join('');
+    $('logCondition').innerHTML = CONDITIONS.map(function (c) { return '<option>' + c + '</option>'; }).join('');
+    $('year').textContent = new Date().getFullYear();
+
+    load();
+    if (state.settings.location && $('locationFilter')) {
+      $('locationFilter').value = state.settings.location;
+    }
+    calculateNutrients();
+    renderAll();
+    fetchTandangSoraWeather();
+    pullFromGoogleDrive(false);
+  })();
+  </script>
+</body>
+</html>
